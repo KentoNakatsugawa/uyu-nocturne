@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- セキュリティ: 外部リソースの読み込み・外部への送信を全面禁止（このゲームは完全自己完結） -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<!-- 検索避け: URLを知っている人だけの限定公開 -->
+<meta name="robots" content="noindex, nofollow">
+<title>うゆの夜想曲 — 板橋に落ちてきた天使</title>
+<style>
+:root{
+  --night:#0e1630; --navy:#182647; --navy2:#213158;
+  --lamp:#ffbe6b; --gold:#ffd98a; --moon:#fdf6e8;
+  --cream:#f2ddb8; --ink:#e9e4d6; --dim:#8f9ab8;
+  --danger:#ff7b8a; --sakura:#f7a8b8;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--night); color:var(--ink);
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif,"Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+  display:flex;align-items:center;justify-content:center;
+  user-select:none;-webkit-user-select:none;
+}
+#app{width:100%;max-width:820px;height:100%;max-height:900px;position:relative;display:flex;flex-direction:column}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+.screen.on{display:flex}
+h1,.dot{font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace,"Osaka-Mono","MS Gothic","Courier New",monospace}
+
+/* ---- 星空背景 ---- */
+.stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.stars i{position:absolute;width:2px;height:2px;background:var(--moon);border-radius:50%;opacity:.7;animation:tw 3s infinite alternate}
+@keyframes tw{from{opacity:.15}to{opacity:.85}}
+
+/* ---- タイトル ---- */
+#title h1{font-size:clamp(28px,7vw,46px);color:var(--gold);letter-spacing:.08em;text-shadow:0 0 24px rgba(255,190,107,.35);margin-top:14px}
+#title .sub{color:var(--dim);margin-top:8px;font-size:14px;letter-spacing:.14em;line-height:1.9}
+.portrait{width:min(56vw,220px);filter:drop-shadow(0 10px 30px rgba(0,0,0,.5))}
+.btn{
+  font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace,"Osaka-Mono","MS Gothic","Courier New",monospace;font-size:18px;cursor:pointer;
+  background:linear-gradient(180deg,#ffce85,#f2a94f);color:#3a2410;
+  border:none;border-radius:14px;padding:13px 30px;letter-spacing:.1em;
+  box-shadow:0 4px 0 #a86c26, 0 10px 24px rgba(0,0,0,.4);
+  transition:transform .08s;
+}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #a86c26}
+.btn.ghost{background:var(--navy2);color:var(--ink);box-shadow:0 4px 0 #0b1226;font-size:15px}
+#title .hint{margin-top:16px;color:var(--dim);font-size:12px;line-height:1.9}
+.lvRow{margin-top:18px;display:flex;gap:8px;justify-content:center}
+.lvBtn{
+  font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace,"Osaka-Mono","MS Gothic","Courier New",monospace;font-size:14px;cursor:pointer;
+  background:rgba(24,38,71,.9);color:var(--moon);border:1.5px solid #34406b;
+  border-radius:14px;padding:10px 12px;line-height:1.5;min-width:96px;
+  display:flex;flex-direction:column;gap:4px;transition:border-color .15s,background .15s;
+}
+.lvBtn span{font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;font-size:10.5px;color:var(--dim);font-weight:500;line-height:1.5}
+.lvBtn.on{border-color:var(--gold);background:#2a3c72;color:var(--gold)}
+.lvBtn.on span{color:var(--ink)}
+#recBox{margin-top:10px;font-size:11.5px;color:var(--dim);line-height:1.9;font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;min-height:0}
+#muteBtn{
+  position:absolute;top:10px;right:10px;z-index:20;cursor:pointer;
+  font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;font-size:17px;color:var(--moon);
+  background:rgba(24,38,71,.85);border:1px solid #46578c;border-radius:12px;padding:6px 11px;
+}
+#muteBtn.off{color:var(--dim);text-decoration:line-through}
+#pauseOv{
+  position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(8,12,28,.76);z-index:6;
+}
+#pauseOv.on{display:flex}
+#ctrlHelp{padding:7px 10px 0;text-align:center;color:var(--dim);font-size:10.5px;line-height:1.8;font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif}
+#jumpPad{position:absolute;right:12px;bottom:14px;display:flex;align-items:flex-end;gap:12px;z-index:4}
+#jumpPad button{
+  cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;
+  border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;font-weight:700;color:var(--moon);
+  background:rgba(24,38,71,.82);border:2px solid #46578c;
+  box-shadow:0 6px 18px rgba(0,0,0,.45);
+  transition:transform .06s,border-color .12s;
+}
+#jumpPad button:active{transform:scale(.93);border-color:var(--gold)}
+#jumpPad button span{font-size:10px;color:var(--dim);font-weight:500}
+#jumpBtn{width:92px;height:92px;font-size:30px;border-color:#5a6ea6;background:rgba(30,46,86,.9)}
+#slideBtn{width:64px;height:64px;font-size:18px;color:var(--gold)}
+
+/* ---- ストーリー ---- */
+#story{justify-content:flex-end;padding:0}
+#storyBg{position:absolute;inset:0;transition:background 1.2s}
+.sceneArt{position:absolute;top:7%;left:50%;transform:translateX(-50%);width:min(60vw,240px);opacity:0;transition:opacity 1s;filter:drop-shadow(0 12px 30px rgba(0,0,0,.5))}
+.sceneArt.show{opacity:1}
+#chapterTag{position:absolute;top:18px;left:0;right:0;text-align:center;color:var(--gold);font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;letter-spacing:.25em;font-size:13px;opacity:.9}
+#textBox{
+  position:relative;width:calc(100% - 28px);margin:0 14px 18px;
+  background:rgba(14,20,44,.92);border:1px solid #34406b;border-radius:18px;
+  padding:18px 20px 22px;min-height:172px;cursor:pointer;
+  box-shadow:0 14px 40px rgba(0,0,0,.45);
+}
+#speaker{color:var(--gold);font-weight:700;font-size:14px;letter-spacing:.12em;margin-bottom:8px;font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace}
+#lineText{font-size:16.5px;line-height:1.95;text-align:left;color:var(--moon);min-height:96px}
+#nextMark{position:absolute;right:18px;bottom:12px;color:var(--gold);font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;animation:bob 1s infinite alternate;font-size:14px}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(4px)}}
+#choices{position:absolute;left:14px;right:14px;bottom:210px;display:none;flex-direction:column;gap:10px}
+#choices button{
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;font-size:15px;font-weight:500;
+  background:rgba(24,38,71,.96);color:var(--moon);border:1px solid #46578c;
+  border-radius:14px;padding:13px 16px;cursor:pointer;text-align:left;line-height:1.5;
+  transition:background .15s,border-color .15s;
+}
+#choices button:hover{background:#25376a;border-color:var(--gold)}
+.itemToast{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:230px;
+  background:rgba(24,38,71,.95);border:1px solid var(--gold);color:var(--gold);
+  border-radius:999px;padding:8px 18px;font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;font-size:14px;
+  opacity:0;transition:opacity .5s;pointer-events:none;white-space:nowrap;
+}
+
+/* ---- アクション ---- */
+#action{padding:0;justify-content:center;background:var(--night)}
+#cwrap{position:relative;width:100%;max-width:820px;display:flex;flex-direction:column}
+canvas{width:100%;display:block;touch-action:none}
+#hud{position:absolute;top:10px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;pointer-events:none;font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace}
+#hearts{color:var(--danger);font-size:20px;letter-spacing:2px;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+#orbCount{color:var(--gold);font-size:15px;text-shadow:0 2px 6px rgba(0,0,0,.6);margin-right:44px}
+#progressWrap{position:absolute;top:42px;left:12px;right:12px;height:6px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden}
+#progressBar{height:100%;width:0%;background:linear-gradient(90deg,var(--lamp),var(--gold));border-radius:3px}
+#stageTitle{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;opacity:0;transition:opacity .6s;background:rgba(8,12,28,.35)}
+#stageTitle .no{color:var(--dim);font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;letter-spacing:.3em;font-size:13px}
+#stageTitle .nm{color:var(--moon);font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;font-size:clamp(20px,5vw,30px);margin-top:8px;text-shadow:0 0 24px rgba(255,217,138,.4)}
+#stageTitle .tip{color:var(--gold);font-size:13.5px;margin-top:14px;line-height:1.9;font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;background:rgba(14,20,44,.8);border-radius:12px;padding:8px 16px;white-space:pre-line;max-width:92%}
+#debuff{
+  position:absolute;top:56px;left:0;right:0;text-align:center;pointer-events:none;
+  color:#ff9bd0;font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;font-size:14px;text-shadow:0 2px 6px rgba(0,0,0,.7);
+}
+/* アイテムバー */
+#itemBar{
+  display:flex;justify-content:center;gap:10px;padding:12px 8px 4px;
+}
+.itemBtn{
+  pointer-events:auto;cursor:pointer;min-width:88px;
+  font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;font-size:12.5px;font-weight:700;
+  background:rgba(14,20,44,.88);color:var(--moon);
+  border:1.5px solid #46578c;border-radius:14px;padding:7px 10px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.3;
+  transition:border-color .15s,opacity .15s;
+}
+.itemBtn .cnt{font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;color:var(--gold);font-size:14px}
+.itemBtn:disabled{opacity:.35;cursor:default}
+.itemBtn:not(:disabled):active{border-color:var(--gold);transform:translateY(1px)}
+
+/* ---- リザルト/エンディング ---- */
+#result .big,#ending .big{font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;font-size:clamp(22px,6vw,34px);color:var(--gold);letter-spacing:.15em}
+#result p,#ending p{margin-top:14px;line-height:2;font-size:15.5px;max-width:520px;color:var(--moon)}
+.orbsGained{margin-top:10px;color:var(--gold);font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace;font-size:18px}
+#ending .etitle{margin-top:10px;color:var(--dim);letter-spacing:.3em;font-size:13px;font-family:"DotGothic16","Osaka-Mono","MS Gothic","Courier New",monospace}
+.fadeIn{animation:fin 1.2s ease both}
+@keyframes fin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="stars" id="starField"></div>
+  <button id="muteBtn" title="サウンド切替">♪</button>
+
+  <!-- タイトル -->
+  <section id="title" class="screen on">
+    <svg class="portrait" viewBox="0 0 200 210" id="pomSvg1"></svg>
+    <h1>うゆの夜想曲</h1>
+    <div class="sub">板橋のペットショップに落ちてきた天使、<br>ポメチワの女の子「うゆ」の物語</div>
+    <div style="margin-top:22px"><button class="btn" id="startBtn">物語を始める</button></div>
+    <div class="lvRow" id="lvRow">
+      <button class="lvBtn on" data-lv="1">レベル1<span>やさしい<br>基本ルール</span></button>
+      <button class="lvBtn" data-lv="2">レベル2<span>💩出現<br>踏んだら即アウト</span></button>
+      <button class="lvBtn" data-lv="3">レベル3<span>💩＋すれ違い犬<br>10秒間1.5倍速</span></button>
+    </div>
+    <div id="recBox"></div>
+    <div class="hint">タップ／スペースで進行・ジャンプ／下スワイプ(↓キー)でスライディング<br>ステージごとに新しいアクションが解放されます</div>
+  </section>
+
+  <!-- ストーリー -->
+  <section id="story" class="screen">
+    <div id="storyBg"></div>
+    <div id="chapterTag"></div>
+    <svg class="sceneArt" viewBox="0 0 200 210" id="pomSvg2"></svg>
+    <div id="choices"></div>
+    <div class="itemToast" id="itemToast"></div>
+    <div id="textBox">
+      <div id="speaker"></div>
+      <div id="lineText"></div>
+      <div id="nextMark">▼ タップ</div>
+    </div>
+  </section>
+
+  <!-- アクション -->
+  <section id="action" class="screen">
+    <div id="cwrap">
+      <canvas id="cv" width="820" height="470"></canvas>
+      <div id="hud"><div id="hearts"></div><div id="orbCount"></div></div>
+      <div id="progressWrap"><div id="progressBar"></div></div>
+      <div id="debuff"></div>
+      <div id="stageTitle"><div class="no"></div><div class="nm"></div><div class="tip"></div></div>
+      <div id="itemBar">
+        <button class="itemBtn" id="btnPause" style="min-width:56px"><span>⏸</span><span class="cnt">停止</span></button>
+        <button class="itemBtn" id="btnSnack"><span>🦴 ビスケのおやつ</span><span class="cnt"></span></button>
+        <button class="itemBtn" id="btnFeather"><span>✧ 天使のはね</span><span class="cnt"></span></button>
+        <button class="itemBtn" id="btnBark"><span>♪ まもりのバウ！</span><span class="cnt"></span></button>
+      </div>
+      <div id="pauseOv">
+        <div class="dot" style="font-size:30px;color:var(--gold);letter-spacing:.2em">PAUSE</div>
+        <button class="btn" id="resumeBtn" style="margin-top:20px">さいかい</button>
+        <div class="dot" id="cdNum" style="font-size:46px;color:var(--moon);margin-top:14px;min-height:56px"></div>
+      </div>
+      <div id="ctrlHelp">🐾ボタン／画面タップ＝ジャンプ（2回で2段）　長押し＝かっくう　▼ボタン／下スワイプ＝しゃがむ（スライディング）　キー: ␣ジャンプ ↓しゃがむ 1/2/3アイテム</div>
+    </div>
+    <div id="jumpPad">
+      <button id="slideBtn">▼<span>しゃがむ</span></button>
+      <button id="jumpBtn">🐾<span>ジャンプ</span></button>
+    </div>
+  </section>
+
+  <!-- リザルト -->
+  <section id="result" class="screen">
+    <div class="big fadeIn" id="resTitle">STAGE CLEAR</div>
+    <div class="orbsGained" id="resOrbs"></div>
+    <p id="resText"></p>
+    <div style="margin-top:22px"><button class="btn" id="resBtn">つづける</button></div>
+  </section>
+
+  <!-- エンディング -->
+  <section id="ending" class="screen">
+    <svg class="portrait" viewBox="0 0 200 210" id="pomSvg3" style="width:min(44vw,175px)"></svg>
+    <div class="big fadeIn" id="endTitle"></div>
+    <div class="etitle" id="endSub"></div>
+    <p id="endText"></p>
+    <p id="endHint" style="color:var(--dim);font-size:13px;white-space:pre-line;font-style:normal"></p>
+    <p style="color:var(--dim);font-size:13px" id="endStats"></p>
+    <div style="margin-top:20px"><button class="btn ghost" id="againBtn">もう一度あそぶ</button></div>
+  </section>
+</div>
+
+<script>
+/* =====================================================
+   うゆの夜想曲 — story × action v2
+===================================================== */
+const $=s=>document.querySelector(s);
+const screens={title:$('#title'),story:$('#story'),action:$('#action'),result:$('#result'),ending:$('#ending')};
+function show(name){for(const k in screens)screens[k].classList.toggle('on',k===name);}
+let paused=false;
+
+/* ---------- サウンド（Web Audio・チップチューン風） ---------- */
+const SND={ctx:null,master:null,mute:false,bgm:null,step:0,timer:null,want:null};
+function audioInit(){
+  if(SND.ctx)return;
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  SND.ctx=new C();SND.master=SND.ctx.createGain();
+  SND.master.gain.value=0.15;SND.master.connect(SND.ctx.destination);
+  if(SND.want)setBGM(SND.want);
+}
+function tone(freq,dur,type='square',vol=1,slide=0){
+  if(!SND.ctx||SND.mute)return;
+  const t0=SND.ctx.currentTime;
+  const o=SND.ctx.createOscillator(),g=SND.ctx.createGain();
+  o.type=type;o.frequency.setValueAtTime(freq,t0);
+  if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),t0+dur);
+  g.gain.setValueAtTime(vol,t0);
+  g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+  o.connect(g);g.connect(SND.master);
+  o.start(t0);o.stop(t0+dur+0.02);
+}
+const SE={
+ jump(){tone(320,0.13,'square',.45,240)},
+ jump2(){tone(430,0.13,'square',.45,280)},
+ orb(){tone(880,0.09,'triangle',.55);setTimeout(()=>tone(1318,0.11,'triangle',.4),55)},
+ item(){[659,880,1108].forEach((f,i)=>setTimeout(()=>tone(f,0.09,'square',.38),i*65))},
+ hit(){tone(190,0.24,'sawtooth',.55,-130)},
+ poop(){tone(130,0.42,'sawtooth',.55,-70)},
+ bark(){tone(150,0.16,'square',.75,70);setTimeout(()=>tone(95,0.2,'sawtooth',.45,-40),25)},
+ slide(){tone(240,0.12,'triangle',.4,-90)},
+ dizzy(){[520,440,370].forEach((f,i)=>setTimeout(()=>tone(f,0.12,'triangle',.4),i*90))},
+ boss(){tone(72,0.5,'sawtooth',.65,-34);setTimeout(()=>tone(60,0.5,'sawtooth',.5,-20),180)},
+};
+const NP={
+ story:{iv:300,seq:[392,0,440,0,523,0,440,0,349,0,392,0,330,0,0,0],type:'triangle',vol:.30,
+        bass:[98,0,0,0,110,0,0,0,87,0,0,0,98,0,0,0]},
+ action:{iv:155,seq:[523,523,659,0,587,0,523,0,440,0,523,587,659,0,523,0],type:'square',vol:.17,
+        bass:[131,0,131,0,147,0,147,0,110,0,110,0,131,0,131,0]},
+ boss:{iv:135,seq:[440,0,415,0,440,466,440,0,349,0,330,0,349,392,349,0],type:'square',vol:.19,
+        bass:[110,110,0,110,104,104,0,104,87,87,0,87,98,98,0,98]},
+};
+function setBGM(name){
+  SND.want=name;
+  if(!SND.ctx){SND.bgm=null;clearInterval(SND.timer);SND.timer=null;return;}
+  if(SND.bgm===name)return;
+  SND.bgm=name;SND.step=0;
+  clearInterval(SND.timer);SND.timer=null;
+  if(!name)return;
+  const p=NP[name];
+  SND.timer=setInterval(()=>{
+    if(SND.mute||paused)return;
+    const s=SND.step%p.seq.length;
+    if(p.seq[s])tone(p.seq[s],p.iv/1000*0.9,p.type,p.vol);
+    if(p.bass[s])tone(p.bass[s],p.iv/1000*0.95,'triangle',p.vol*0.85);
+    SND.step++;
+  },p.iv);
+}
+
+
+/* ---------- 星空 ---------- */
+(function(){const f=$('#starField');for(let i=0;i<60;i++){const s=document.createElement('i');
+s.style.left=Math.random()*100+'%';s.style.top=Math.random()*100+'%';
+s.style.animationDelay=(Math.random()*3)+'s';s.style.transform=`scale(${.5+Math.random()*1.3})`;f.appendChild(s);}})();
+
+/* ---------- うゆのSVG（クリーム色ポメチワ・天使の輪つき） ---------- */
+const POM_SVG=`
+<defs>
+  <radialGradient id="furG" cx="50%" cy="38%" r="70%">
+    <stop offset="0%" stop-color="#f8ecd2"/><stop offset="60%" stop-color="#f0d9ac"/><stop offset="100%" stop-color="#e3bd82"/>
+  </radialGradient>
+  <radialGradient id="chestG" cx="50%" cy="30%" r="75%">
+    <stop offset="0%" stop-color="#fffdf6"/><stop offset="100%" stop-color="#f4e6c8"/>
+  </radialGradient>
+</defs>
+<g transform="translate(0,10)">
+  <!-- しっぽ -->
+  <path d="M148 128 q34 -14 30 -46 q22 34 -8 60 q-14 12 -26 8z" fill="#ecd2a0"/>
+  <!-- 胴体 -->
+  <ellipse cx="100" cy="140" rx="52" ry="44" fill="url(#furG)"/>
+  <ellipse cx="100" cy="148" rx="32" ry="34" fill="url(#chestG)"/>
+  <!-- 前足 -->
+  <rect x="80" y="158" width="13" height="30" rx="6" fill="#f4e6c8"/>
+  <rect x="107" y="158" width="13" height="30" rx="6" fill="#f4e6c8"/>
+  <ellipse cx="86.5" cy="188" rx="9" ry="5.5" fill="#fffdf6"/>
+  <ellipse cx="113.5" cy="188" rx="9" ry="5.5" fill="#fffdf6"/>
+  <!-- 耳 -->
+  <path d="M52 66 L70 20 L88 60 q-18 -4 -36 6z" fill="#e8c78e"/>
+  <path d="M148 66 L130 20 L112 60 q18 -4 36 6z" fill="#e8c78e"/>
+  <path d="M62 58 L71 32 L82 56 q-10 -2 -20 2z" fill="#d9a3a8"/>
+  <path d="M138 58 L129 32 L118 56 q10 -2 20 2z" fill="#d9a3a8"/>
+  <!-- 頭 -->
+  <circle cx="100" cy="82" r="42" fill="url(#furG)"/>
+  <path d="M58 84 q-10 14 -4 26 q10 -4 16 -14z" fill="#eed7ab"/>
+  <path d="M142 84 q10 14 4 26 q-10 -4 -16 -14z" fill="#eed7ab"/>
+  <!-- リボン -->
+  <g transform="translate(60,38) rotate(-18)">
+    <path d="M0 0 L-13 -8 L-11 8 z" fill="#f78fb0"/>
+    <path d="M0 0 L13 -8 L11 8 z" fill="#f78fb0"/>
+    <circle cx="0" cy="0" r="4" fill="#ffc2d6"/>
+  </g>
+  <!-- マズル -->
+  <ellipse cx="100" cy="98" rx="17" ry="13" fill="#fbf2dd"/>
+  <!-- 目 -->
+  <g class="eye"><circle cx="83" cy="78" r="7.2" fill="#2a1c14"/><circle cx="85.4" cy="75.6" r="2.3" fill="#fff" opacity=".9"/></g>
+  <g class="eye"><circle cx="117" cy="78" r="7.2" fill="#2a1c14"/><circle cx="119.4" cy="75.6" r="2.3" fill="#fff" opacity=".9"/></g>
+  <!-- ほっぺ -->
+  <circle cx="72" cy="92" r="6" fill="#f2b4b4" opacity=".45"/>
+  <circle cx="128" cy="92" r="6" fill="#f2b4b4" opacity=".45"/>
+  <!-- 鼻・口 -->
+  <ellipse cx="100" cy="93" rx="6.5" ry="5" fill="#241a16"/>
+  <path d="M100 98 q0 5 -5 6 M100 98 q0 5 5 6" stroke="#3a2c22" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+</g>
+<style>
+.eye{animation:blink 4.6s infinite}
+@keyframes blink{0%,94%,100%{transform:none}96%,98%{transform:scaleY(.08);transform-origin:center 88px}}
+</style>`;
+['pomSvg1','pomSvg2','pomSvg3'].forEach(id=>{document.getElementById(id).innerHTML=POM_SVG;});
+
+
+
+/* ---------- ゲーム状態 ---------- */
+const NAME='うゆ';
+const G={orbs:0,orbMax:0,kizuna:0,hearts:3,stage:0,level:1,items:{snack:1,feather:0,bark:0},records:{},t0:0};
+const RANK_NAMES={3:'TRUE END',2:'GOOD END',1:'ANOTHER END'};
+function fmtTime(s){return `${Math.floor(s/60)}分${String(Math.floor(s%60)).padStart(2,'0')}秒`;}
+function renderRecords(){
+  let h='';
+  for(const lv of[1,2,3]){
+    const r=G.records[lv];
+    if(r)h+=`LV${lv} ベスト：記憶 ${r.orbs}/${r.max}・${RANK_NAMES[r.rank]}・${fmtTime(r.time)}<br>`;
+  }
+  $('#recBox').innerHTML=h;
+}
+
+function toast(msg){
+  const t=$('#itemToast');t.textContent=msg;t.style.opacity=1;
+  clearTimeout(t._tm);t._tm=setTimeout(()=>t.style.opacity=0,2200);
+}
+
+/* ---------- ストーリーデータ ---------- */
+function scenes(){return [
+{ // 0: プロローグ
+  tag:'序章　鍵の音がしない夜',
+  bg:'linear-gradient(180deg,#0b1026 0%,#182647 62%,#2a2438 100%)',
+  art:true,
+  lines:[
+    ['','時計の針は、夜の十一時をまわった。'],
+    ['','いつもなら、玄関の鍵がかちゃりと鳴る時間。それから廊下を歩く足音。ソファに沈むため息。……今夜は、どれも聞こえない。'],
+    ['うゆ','（……おそい。おそすぎる。）'],
+    ['','ふと、窓の外。湾のむこうの空に、見たことのない金色の光がゆらめいていた。'],
+    ['うゆ','（あの光——かすかに、あの人の匂いがする。雨のあとの街と、コーヒーと、わたしの名前を呼ぶ声の匂い。）'],
+    ['','となりの毛布では、相棒の白いチワワ・ビスケが、耳だけこちらに向けて丸くなっている。……起きてる。ぜったい起きてる。'],
+  ],
+  choice:{q:'ビスケに、なんて言う？',opts:[
+    ['「留守番、たのんだよ。かならず連れて帰るから」',2],
+    ['「……ないしょだよ」と、鼻先をちょんと合わせる',2],
+    ['なにも言わず、そっと毛布をかけ直して出る',1],
+  ]},
+  after:[
+    ['ビスケ','「…………」'],
+    ['','ビスケはのそりと起き上がると、自分のおやつ箱から一番大きなビスケットをくわえてきて、わたしの前にことんと置いた。行ってこい、ということらしい。'],
+    ['うゆ','（……ありがと。世界一かっこいい留守番だよ、きみは。）'],
+    ['','網戸のすきまは、いつか覚えた脱走ルート。冷たい夜風が、ふわふわの毛をなでていく。迎えにいこう。わたしの鼻は、世界でいちばんあの人にくわしいんだ。'],
+  ],
+  gain:{snack:1,msg:'🦴 ビスケのおやつ を手に入れた（ハート回復）'},
+  next:{type:'action',stage:0}
+},
+{ // 1: 白い犬
+  tag:'第二章　倉庫街の白い犬',
+  bg:'linear-gradient(180deg,#0c1330 0%,#1d2c50 55%,#3b3350 100%)',
+  art:false,
+  lines:[
+    ['ビスケ（念話）','《……きこえる？ うゆ。ぼく。ソファの下の秘密きち、じつは電波の入りがいいんだ》'],
+    ['ビスケ（念話）','《家はまかせて。それより前を見て走りなよ。……あと、道に落ちてる「へんなもの」、ぜったい踏まないでよね》'],
+    ['','匂いの糸は、湾岸の倉庫街へつづいていた。錆びたコンテナのあいだに、月あかりのたまりのような場所がある。'],
+    ['','そこに、一頭の白い犬が座っていた。輪郭が、すこしだけ透けている。'],
+    ['白い犬','「……お嬢ちゃん。こんな時間に、なにを追いかけている」'],
+    ['うゆ','「帰ってこない人を、迎えにいくの」'],
+    ['白い犬','「そうか。わたしもな、ずっとここで待っていた。船で働く人だった。『すぐ戻る』と言ったきり——気づけば、この街の景色のほうが先に変わってしまった」'],
+    ['白い犬','「なあお嬢ちゃん。待つことは、愛だと思うか。それとも、鎖だと思うか」'],
+  ],
+  choice:{q:'白い犬に、なんて答える？',opts:[
+    ['「待てるのは、帰る場所を信じてるからだよ。それは鎖じゃない」',2],
+    ['「もう、じゅうぶん待ったよ。自由になっていいんだ」',1],
+    ['なにも言わず、白い犬のとなりに座って、同じ方角を見る',2],
+  ]},
+  after:[
+    ['白い犬','「……ふ。あたたかい答えだ。それにお嬢ちゃん、おまえ——背中に、うっすら光が残っているな。翼の跡だ。おまえ、空から来ただろう」'],
+    ['うゆ','「……！ どうして、それを」'],
+    ['白い犬','「幽霊は目がいいのさ。金色の光なら、風の高いところを通っていった。屋上をゆけ。跳んだあと空を長くつかめば、翼の名残がおまえを運ぶ。——足場が切れた屋上では、それが命綱になる」'],
+    ['','白い犬はそう言うと、羽根のように白い毛をひとふさ、わたしの首元にふわりと結んでくれた。すがたは月あかりに溶けて——最後に、たしかに尻尾がひとつ、うれしそうに揺れた。'],
+  ],
+  gain:{feather:1,msg:'✧ 天使のはね を手に入れた（数秒間むてき＆ふわふわ）'},
+  next:{type:'action',stage:1}
+},
+{ // 2: 観覧車の記憶
+  tag:'第三章　止まった観覧車',
+  bg:'linear-gradient(180deg,#131233 0%,#2a2150 60%,#4a2b4d 100%)',
+  art:true,
+  lines:[
+    ['ビスケ（念話）','《……観覧車？ いいなあ、ぼくも乗りたい。帰ったらおみやげ話、ぜんぶ聞くからね。ひとつ残らず》'],
+    ['ビスケ（念話）','《それとうゆ、無理はしないで。きみが帰ってこないと——ぼくの毛づくろいの相手が、いないんだから》'],
+    ['','屋上づたいに駆けるうち、目の前に巨大な輪が現れた。営業を終えて止まったはずの観覧車が、なぜかゆっくりと回っている。'],
+    ['','いちばん低いゴンドラの扉が、ひとりでに開いた。乗りこむと、ガラスの向こうに——景色ではなく、記憶が流れはじめた。'],
+    ['','あの日。天上の光の階段を、わたしは踏み外した。雲を三つ突き抜けて、まっさかさま。落ちた先は——板橋の、小さなペットショップの屋根。ずどん、と。'],
+    ['','ほこりと悲鳴とドッグフードの雨。腰を抜かしてケージの前にへたりこんだわたしと、ガラスの向こうで目を丸くしていたひとりの人。目が、合った。'],
+    ['','その人は、しばらくぽかんとして——それから、吹き出すみたいに笑ったのだ。「空から降ってくるなんて、運命じゃん」。翼はどこかへ消えていた。かわりに、名前をもらった。うゆ、と。'],
+    ['','雨の日の留守番。ドアの前でビスケと二匹ならんで丸くなって待っていたら、ずぶ濡れで帰ってきたあの人は、自分より先にタオルでわたしたちを拭いた。'],
+    ['','ソファでの昼寝。テレビの音。ふたりと二頭ぶんの、しあわせな重さでへこんだクッション。'],
+    ['？？？','《——天使よ。なぜ迎えにいく。待っていれば、いずれ帰るかもしれないのに》'],
+  ],
+  choice:{q:'観覧車の声に、心の答えを',opts:[
+    ['「『おかえり』は、待つだけの言葉じゃない。迎えにいって言う言葉でもあるの」',2],
+    ['「理由なんてない。足が勝手に走りだしたの」',1],
+    ['「空から落ちたわたしを、あの人が拾ってくれた。今度はわたしが拾いにいく番」',2],
+  ]},
+  after:[
+    ['？？？','《……よい答えだ。ならば最後に、おまえの武器を返そう。天使のラッパは失われたが——おまえには、心臓と、声がある》'],
+    ['','胸の奥が、とくんと熱くなった。吠えれば、想いが波になる。嵐の瓦礫も、道をふさぐものも、この声ではらいのけられる気がした。'],
+    ['うゆ','（金色の光は、大きな橋の上。白い塔のあいだで、心細そうにまたたいてる。——待ってて。いま、いくから。）'],
+  ],
+  gain:{bark:2,msg:'♪ まもりのバウ！×2 を手に入れた（前方の障害物をはらう）'},
+  next:{type:'action',stage:2}
+},
+];}
+
+/* ---------- ストーリーエンジン ---------- */
+let sceneIdx=0,lineIdx=0,phase='lines',typing=null;
+const lineText=$('#lineText'),speakerEl=$('#speaker'),choicesEl=$('#choices'),nextMark=$('#nextMark');
+
+function startScene(i){
+  sceneIdx=i;lineIdx=0;phase='lines';
+  setBGM('story');
+  const sc=scenes()[i];
+  $('#storyBg').style.background=sc.bg;
+  $('#chapterTag').textContent=sc.tag;
+  $('#pomSvg2').classList.toggle('show',!!sc.art);
+  show('story');
+  renderLine();
+}
+function typeLine(text){
+  clearInterval(typing);lineText.textContent='';let i=0;nextMark.style.visibility='hidden';
+  typing=setInterval(()=>{i++;lineText.textContent=text.slice(0,i);
+    if(i>=text.length){clearInterval(typing);typing=null;nextMark.style.visibility='visible';}},22);
+}
+function currentList(){const sc=scenes()[sceneIdx];return phase==='after'?sc.after:sc.lines;}
+function renderLine(){
+  const [sp,tx]=currentList()[lineIdx];
+  speakerEl.textContent=sp;speakerEl.style.display=sp?'block':'none';
+  typeLine(tx);
+}
+function advanceStory(){
+  if(typing){
+    clearInterval(typing);typing=null;
+    lineText.textContent=currentList()[lineIdx][1];nextMark.style.visibility='visible';return;
+  }
+  const sc=scenes()[sceneIdx];
+  lineIdx++;
+  if(lineIdx<currentList().length){renderLine();return;}
+  if(phase==='lines'&&sc.choice){showChoices(sc.choice);return;}
+  if(phase==='lines'&&sc.after){phase='after';lineIdx=0;renderLine();return;}
+  endScene();
+}
+function showChoices(ch){
+  phase='choice';nextMark.style.visibility='hidden';
+  speakerEl.textContent='';speakerEl.style.display='none';
+  lineText.textContent=ch.q;
+  choicesEl.innerHTML='';choicesEl.style.display='flex';
+  ch.opts.forEach(([label,pt])=>{
+    const b=document.createElement('button');b.textContent=label;
+    b.onclick=e=>{e.stopPropagation();G.kizuna+=pt;choicesEl.style.display='none';
+      const sc=scenes()[sceneIdx];
+      if(sc.after){phase='after';lineIdx=0;renderLine();}else endScene();};
+    choicesEl.appendChild(b);
+  });
+}
+function endScene(){
+  const sc=scenes()[sceneIdx];
+  if(sc.gain){
+    phase='wait';
+    for(const k in sc.gain)if(k!=='msg')G.items[k]=(G.items[k]||0)+sc.gain[k];
+    toast(sc.gain.msg);
+    sc.gain=null;
+    setTimeout(()=>{if(sc.next.type==='action')startStage(sc.next.stage);},1400);
+    return;
+  }
+  if(sc.next.type==='action')startStage(sc.next.stage);
+}
+$('#textBox').addEventListener('click',()=>{if(phase!=='choice'&&phase!=='wait')advanceStory();});
+
+/* =====================================================
+   アクションパート — ステージごとに異なるアクション
+   S1: 基本ラン（ジャンプ×2）／おやつ拾い
+   S2: 滑空（長押し）＋足場の切れた屋上（落下穴）
+   S3: 嵐＋高速＋バウ！で障害物をはらう
+===================================================== */
+const cv=$('#cv'),ctx=cv.getContext('2d');
+const W=820,H=470,GROUND=380;
+const STAGES=[
+ {no:'STAGE 1',name:'お台場海浜公園　—匂いの糸—',dur:32,speed:4.6,sky:['#0b1026','#1c2b52','#31314e'],
+  rain:false,orbTotal:8,glide:false,pits:false,spawnBase:104,spawnRand:70,scene:'seaside',
+  tip:'タップでジャンプ／空中でもう1回タップで2段ジャンプ',
+  drops:['snack','snack'],kinds:['cone','box','cat']},
+ {no:'STAGE 2',name:'大観覧車の空　—翼の名残—',dur:40,speed:5.8,sky:['#0d1130','#241d4e','#472b52'],
+  rain:false,orbTotal:9,glide:true,pits:true,spawnBase:120,spawnRand:80,scene:'rooftop',
+  tip:'★新アクション★ ジャンプ後に長押しで「かっくう」！\n下スワイプ（↓キー）でスライディング——たれ幕をくぐれ',
+  drops:['feather','snack'],kinds:['fence','crow','duct','banner']},
+ {no:'STAGE 3',name:'レインボーブリッジ　—心臓の音—',dur:44,speed:7.2,sky:['#070a1c','#141a3a','#22203e'],
+  rain:true,orbTotal:10,glide:true,pits:false,spawnBase:74,spawnRand:52,scene:'bridge',
+  tip:'★新アクション★ 「バウ！」ボタンで前方の障害物をふきとばせ！\n最高速の嵐——そして橋の果てに、なにかがいる',
+  drops:['bark','bark','snack'],kinds:['debris','wave','crow','banner']},
+];
+let A=null,rafId=null,pointerHeld=false,spaceHeld=false;
+
+function startStage(si){
+  G.stage=si;const st=STAGES[si];
+  A={st,t:0,dur:st.dur*60,
+    dog:{x:130,y:GROUND,vy:0,jumps:0,inv:0,run:0,slide:0,dv:false},
+    obs:[],orbs:[],drops:[],gaps:[],parts:[],rivals:[],jq:[],lagT:0,
+    got:0,spawnT:80,orbT:120,gapT:220,dropT:300,dropIdx:0,
+    shake:0,flash:0,boltX:0,over:false,rain:[],wave:null,featherT:0,
+    bossActive:false,boss:null,bossDone:false,bossOut:0,proj:[],barkCd:0,
+    mets:[],train:null,trainT:380};
+  A.rivalTimes=G.level>=3?[Math.floor(A.dur*0.28),Math.floor(A.dur*0.62)]:[];
+  if(st.rain)for(let i=0;i<90;i++)A.rain.push({x:Math.random()*W,y:Math.random()*H,l:8+Math.random()*10,v:9+Math.random()*5});
+  G.hearts=3;
+  setBGM('action');
+  show('action');
+  $('#stageTitle .no').textContent=st.no+'　LV.'+G.level;
+  $('#stageTitle .nm').textContent=st.name;
+  let tip=st.tip;
+  if(G.level>=2)tip+='\n⚠ 💩を踏むと一発アウト！（バウ！で消せる）';
+  if(G.level>=3)tip+='\n⚠ すれ違いワンコの後、10秒間ステージが1.5倍速で流れる';
+  $('#stageTitle .tip').textContent=tip;
+  $('#debuff').textContent='';
+  const stt=$('#stageTitle');stt.style.opacity=1;
+  setTimeout(()=>stt.style.opacity=0,2800);
+  updHUD();updItemBar();
+  cancelAnimationFrame(rafId);loop();
+}
+function updHUD(){
+  $('#hearts').textContent='♥'.repeat(G.hearts)+'♡'.repeat(Math.max(0,3-G.hearts));
+  $('#orbCount').textContent=`✦ 記憶のかけら ${A.got}/${A.st.orbTotal}`;
+}
+function updItemBar(){
+  const map={btnSnack:'snack',btnFeather:'feather',btnBark:'bark'};
+  for(const id in map){
+    const b=document.getElementById(id),k=map[id],n=G.items[k]||0;
+    if(k==='bark'&&A&&A.bossActive){
+      b.querySelector('.cnt').textContent='∞';
+      b.disabled=A.barkCd>0;
+      continue;
+    }
+    b.querySelector('.cnt').textContent='×'+n;
+    b.disabled=n<=0||(k==='snack'&&G.hearts>=3);
+  }
+}
+
+/* ---- 入力 ---- */
+function doJump(){
+  const d=A.dog;
+  d.slide=0;
+  if(d.jumps===0&&d.y>=GROUND-2){d.vy=-12.6;d.jumps=1;SE.jump();}
+  else if(d.jumps<=1){d.vy=-10.6;d.jumps=2;SE.jump2();}
+}
+function jump(){doJump();}
+function dive(){ // スライディング／急降下
+  if(!A||A.over||paused)return;
+  const d=A.dog;
+  if(d.y>=GROUND-2){d.slide=34;SE.slide();}
+  else if(d.y>GROUND-56){d.y=GROUND;d.vy=0;d.jumps=0;d.slide=34;SE.slide();}
+  else{d.vy=Math.max(d.vy,15);d.dv=true;}
+}
+let swY=0,swDone=false;
+cv.addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(paused)return;
+  pointerHeld=true;swY=e.clientY;swDone=false;
+  if(A&&!A.over)jump();
+});
+cv.addEventListener('pointermove',e=>{
+  if(paused||!pointerHeld||swDone)return;
+  if(e.clientY-swY>34){swDone=true;dive();}
+});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>cv.addEventListener(ev,()=>pointerHeld=false));
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='ArrowUp'){
+    e.preventDefault();
+    if(screens.action.classList.contains('on')&&A&&!A.over&&!paused){if(!spaceHeld)jump();spaceHeld=true;}
+    else if(screens.story.classList.contains('on')&&phase!=='choice'&&phase!=='wait')advanceStory();
+  }
+  if(e.code==='ArrowDown'||e.code==='KeyS'){
+    if(screens.action.classList.contains('on')){e.preventDefault();dive();}
+  }
+  if(screens.action.classList.contains('on')&&!paused){
+    if(e.key==='1')useItem('snack');
+    if(e.key==='2')useItem('feather');
+    if(e.key==='3')useItem('bark');
+    if(e.key==='p'||e.key==='P')togglePause();
+  }
+});
+document.addEventListener('keyup',e=>{if(e.code==='Space'||e.code==='ArrowUp')spaceHeld=false;});
+
+/* ---- ポーズ ---- */
+/* 右下ボタン：ジャンプ（長押しでかっくう）としゃがむ */
+$('#jumpBtn').addEventListener('pointerdown',e=>{
+  e.preventDefault();e.stopPropagation();
+  if(paused)return;
+  pointerHeld=true;
+  if(A&&!A.over)jump();
+});
+['pointerup','pointercancel','pointerleave'].forEach(ev=>
+  $('#jumpBtn').addEventListener(ev,()=>pointerHeld=false));
+$('#slideBtn').addEventListener('pointerdown',e=>{
+  e.preventDefault();e.stopPropagation();
+  if(paused)return;
+  dive();
+});
+
+function togglePause(){
+  if(!A||A.over||paused)return;
+  paused=true;cancelAnimationFrame(rafId);
+  $('#cdNum').textContent='';
+  $('#pauseOv').classList.add('on');
+}
+$('#btnPause').addEventListener('pointerdown',e=>{e.stopPropagation();togglePause();});
+$('#resumeBtn').addEventListener('click',()=>{
+  $('#resumeBtn').style.display='none';
+  let n=3;$('#cdNum').textContent=n;
+  const iv=setInterval(()=>{
+    n--;
+    if(n<=0){clearInterval(iv);
+      $('#pauseOv').classList.remove('on');
+      $('#resumeBtn').style.display='';
+      paused=false;
+      cancelAnimationFrame(rafId);loop();
+    }else $('#cdNum').textContent=n;
+  },600);
+});
+
+/* ---- アイテム使用 ---- */
+function useItem(k){
+  if(!A||A.over||paused)return;
+  if(k==='snack'){
+    if((G.items.snack||0)<=0||G.hearts>=3)return;
+    G.items.snack--;G.hearts++;A.flash=6;SE.item();
+    burst(A.dog.x,A.dog.y-40,'#ffd0da');
+  }
+  if(k==='feather'){
+    if((G.items.feather||0)<=0)return;
+    G.items.feather--;A.featherT=270;SE.item();
+    burst(A.dog.x,A.dog.y-40,'#fff3c8');
+  }
+  if(k==='bark'){
+    if(A.bossActive){
+      if(A.barkCd>0)return;
+      A.barkCd=80; // ボス戦中は使い放題（クールダウン制）
+    }else{
+      if((G.items.bark||0)<=0)return;
+      G.items.bark--;
+    }
+    A.wave={r:14,life:34,bossHit:false};A.shake=8;SE.bark();
+  }
+  updHUD();updItemBar();
+}
+$('#btnSnack').addEventListener('pointerdown',e=>{e.stopPropagation();useItem('snack');});
+$('#btnFeather').addEventListener('pointerdown',e=>{e.stopPropagation();useItem('feather');});
+$('#btnBark').addEventListener('pointerdown',e=>{e.stopPropagation();useItem('bark');});
+
+function burst(x,y,col){
+  for(let i=0;i<12;i++){const a=Math.random()*6.28,v=1.5+Math.random()*3;
+    A.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,life:26+Math.random()*10,col});}
+}
+
+/* ---- スポーン ---- */
+function spawnObs(){
+  const st=A.st,kinds=st.kinds;
+  let k;
+  if(G.level>=2&&Math.random()<0.28)k='poop';
+  else k=kinds[Math.floor(Math.random()*kinds.length)];
+  let o={k,x:W+40,y:GROUND,w:34,h:34,fly:false};
+  if(k==='banner'){o.fly=true;o.y=GROUND-230;o.w=26;o.h=200;}
+  if(k==='poop'){o.w=32;o.h=26;}
+  if(k==='cone'){o.w=30;o.h=40;}
+  if(k==='box'){o.w=44;o.h=44;}
+  if(k==='cat'){o.w=42;o.h=30;}
+  if(k==='duct'){o.w=52;o.h=46;}
+  if(k==='fence'){o.w=26;o.h=58;}
+  if(k==='debris'){o.w=46;o.h=36;}
+  if(k==='wave'){o.w=64;o.h=26;}
+  if(k==='crow'){o.w=40;o.h=26;o.fly=true;o.y=GROUND-76-Math.random()*46;}
+  // 穴の直上には置かない（たれ幕もスライド用の地面が必要）
+  if((!o.fly||k==='banner')&&A.gaps.some(g=>o.x<g.x+g.w+80&&o.x+o.w>g.x-80))return;
+  A.obs.push(o);
+}
+function spawnGap(){
+  // 直前にたれ幕などが出ていたら少し待つ
+  if(A.obs.some(o=>o.x>W-170)){A.gapT=40;return;}
+  const w=95+Math.random()*45;
+  A.gaps.push({x:W+60,w});
+  A.spawnT=Math.max(A.spawnT,60); // 穴の直後に障害物を置かない
+}
+function spawnOrbs(){
+  const remain=A.st.orbTotal-(A.got+A.orbs.length);
+  const n=Math.max(0,Math.min(3,remain));if(n===0)return;
+  const baseY=GROUND-60-Math.random()*100;
+  for(let i=0;i<n;i++)A.orbs.push({x:W+60+i*54,y:baseY-Math.sin(i/Math.max(1,n-1)*Math.PI)*34,r:11,tk:Math.random()*6});
+}
+function spawnDrop(){
+  const st=A.st;if(A.dropIdx>=st.drops.length)return;
+  const type=st.drops[A.dropIdx++];
+  A.drops.push({type,x:W+50,y:GROUND-64-Math.random()*70,tk:Math.random()*6});
+}
+
+/* ---- メインループ ---- */
+function loop(){
+  rafId=requestAnimationFrame(loop);
+  const st=A.st,d=A.dog;
+  A.t++;
+  const prog=Math.min(1,A.t/A.dur);
+  $('#progressBar').style.width=(prog*100)+'%';
+
+  // --- 物理 ---
+  d.vy+=0.62;
+  // 滑空（ステージ能力 or 天使のはね）
+  const gliding=(st.glide&&(pointerHeld||spaceHeld)&&d.y<GROUND-4&&d.vy>1.6);
+  if(gliding)d.vy=1.6;
+  if(A.featherT>0){A.featherT--;if(d.vy>1.2)d.vy=1.2;}
+  d.y+=d.vy;
+
+  // 着地判定（穴の上では着地しない）
+  if(d.y>=GROUND){
+    const overGap=st.pits&&A.gaps.some(g=>d.x>g.x+16&&d.x<g.x+g.w-16);
+    if(!overGap){
+      d.y=GROUND;d.vy=0;d.jumps=0;
+      if(d.dv){d.slide=30;d.dv=false;SE.slide();}
+    }
+  }
+  if(d.slide>0)d.slide--;
+  // 穴に落ちた
+  if(d.y>H+40){
+    G.hearts--;updHUD();updItemBar();A.shake=14;
+    if(G.hearts<=0){failStage();return;}
+    d.y=GROUND-160;d.vy=0;d.jumps=0;d.inv=110;
+    A.gaps=A.gaps.filter(g=>g.x>d.x+160); // 足元の穴は消す
+  }
+  d.run+=0.28;if(d.inv>0)d.inv--;
+
+  // --- すれ違い犬デバフ：ステージ1.5倍速 ---
+  if(A.lagT>0){
+    A.lagT--;
+    if(!A.bossActive)$('#debuff').textContent=`≫≫ びゅんっ！ステージ1.5倍速（あと${Math.ceil(A.lagT/60)}秒）`;
+    if(A.lagT===0&&!A.bossActive)$('#debuff').textContent='';
+  }
+
+  // --- すれ違いワンコ（レベル3） ---
+  if(A.rivalTimes.length&&A.t>=A.rivalTimes[0]){A.rivalTimes.shift();
+    A.rivals.push({x:W+60,y:GROUND,run:0,passed:false});}
+  A.rivals.forEach(r=>{
+    r.x-=A.st.speed*(1+prog*0.22)*(A.lagT>0?1.5:1)+3.6;r.run+=0.3;
+    if(!r.passed&&r.x<d.x-46){r.passed=true;A.lagT=600;A.flash=6;SE.dizzy();}
+  });
+  A.rivals=A.rivals.filter(r=>r.x>-80);
+
+  // --- ボス：嵐の主 ---
+  if(A.bossActive&&A.boss)updateBoss();
+  if(A.over)return;
+  if(A.bossOut>0){A.bossOut--;if(A.bossOut===0){A.over=true;clearStage();return;}}
+
+  // --- スポーン ---
+  const nearEnd=A.t>A.dur-130;
+  A.spawnT--;if(A.spawnT<=0&&!nearEnd){spawnObs();A.spawnT=st.spawnBase*(1-prog*0.18)+Math.random()*st.spawnRand;}
+  if(st.pits){A.gapT--;if(A.gapT<=0&&!nearEnd){spawnGap();A.gapT=200+Math.random()*160;}}
+  A.orbT--;if(A.orbT<=0&&A.orbs.length<6&&!nearEnd){spawnOrbs();A.orbT=180+Math.random()*110;}
+  A.dropT--;if(A.dropT<=0&&!nearEnd){spawnDrop();A.dropT=(A.dur-260)/Math.max(1,st.drops.length);}
+
+  // --- 移動 ---
+  const sp=st.speed*(1+prog*0.22)*(A.lagT>0?1.5:1);
+  A.obs.forEach(o=>o.x-=sp);A.obs=A.obs.filter(o=>o.x>-90);
+  A.gaps.forEach(g=>g.x-=sp);A.gaps=A.gaps.filter(g=>g.x>-g.w-40);
+  A.orbs.forEach(o=>{o.x-=sp;o.tk+=0.15;});A.orbs=A.orbs.filter(o=>o.x>-40);
+  A.drops.forEach(o=>{o.x-=sp;o.tk+=0.1;});A.drops=A.drops.filter(o=>o.x>-40);
+
+  // --- バウ！衝撃波 ---
+  if(A.wave){
+    A.wave.r+=20;A.wave.life--;
+    A.obs=A.obs.filter(o=>{
+      const oy=o.fly?o.y:o.y-o.h/2;
+      const dist=Math.hypot(o.x-d.x,oy-(d.y-38));
+      if(dist<A.wave.r){burst(o.x+o.w/2,oy,'#a8c8ff');return false;}
+      return true;
+    });
+    // 羽根弾の撃ち返し
+    A.proj.forEach(p=>{
+      if(!p.refl&&Math.hypot(p.x-d.x,p.y-(d.y-38))<A.wave.r){
+        p.refl=true;
+        p.vx=8.5;
+        p.vy=A.boss?(A.boss.y-p.y)*0.035:-2;
+      }
+    });
+    // ボスへの直撃（1波につき1回）
+    if(A.bossActive&&A.boss&&!A.wave.bossHit&&
+       Math.hypot(A.boss.x-d.x,A.boss.y-(d.y-38))<A.wave.r){
+      A.wave.bossHit=true;bossHurt();
+    }
+    if(A.wave&&A.wave.life<=0)A.wave=null;
+  }
+  if(A.over)return;
+
+  // --- 当たり判定 ---
+  const invinc=d.inv>0||A.featherT>0;
+  const sliding=d.slide>0&&d.y>=GROUND-2;
+  const dx=d.x-16,dy=sliding?d.y-26:d.y-44,dw=42,dh=sliding?24:40;
+  if(!invinc)for(const o of A.obs){
+    const oy=o.fly?o.y:o.y-o.h;
+    if(dx<o.x+o.w-8&&dx+dw>o.x+8&&dy<oy+o.h-6&&dy+dh>oy+6){
+      if(o.k==='poop'){SE.poop();failStage('poop');return;} // 踏んだら即アウト
+      hurt();if(A.over)return;
+      break;
+    }
+  }
+  // 羽根弾 vs うゆ
+  if(!invinc)for(const p of A.proj){
+    if(!p.refl&&!p.dead&&Math.abs(p.x-d.x)<24&&Math.abs(p.y-(d.y-(sliding?14:36)))<(sliding?18:30)){
+      p.dead=true;hurt();if(A.over)return;break;
+    }
+  }
+  for(const o of A.orbs){
+    if(!o.hit&&Math.abs(o.x-d.x)<34&&Math.abs(o.y-(d.y-38))<42){o.hit=true;A.got++;A.flash=8;SE.orb();updHUD();}
+  }
+  A.orbs=A.orbs.filter(o=>!o.hit);
+  for(const o of A.drops){
+    if(!o.hit&&Math.abs(o.x-d.x)<36&&Math.abs(o.y-(d.y-38))<44){
+      o.hit=true;G.items[o.type]=(G.items[o.type]||0)+1;A.flash=8;SE.item();
+      burst(o.x,o.y,'#ffe9b0');updItemBar();
+    }
+  }
+  A.drops=A.drops.filter(o=>!o.hit);
+
+  A.parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life--;});
+  A.parts=A.parts.filter(p=>p.life>0);
+
+  draw(prog,gliding);
+  if(A.t>=A.dur&&!A.over){
+    if(G.stage===2){
+      if(!A.bossActive&&!A.bossDone&&A.bossOut===0)startBoss();
+    }else{
+      A.over=true;clearStage();
+    }
+  }
+}
+
+/* ---------- 共通ダメージ ---------- */
+function hurt(){
+  G.hearts--;A.dog.inv=85;A.shake=14;SE.hit();
+  updHUD();updItemBar();
+  if(G.hearts<=0)failStage();
+}
+
+/* ---------- ボス：嵐の主 ---------- */
+function startBoss(){
+  A.bossActive=true;
+  A.boss={x:640,y:168,ph:0,hp:5,atk:110,swoopT:-1,flash:0};
+  setBGM('boss');SE.boss();
+  $('#stageTitle .no').textContent='WARNING';
+  $('#stageTitle .nm').textContent='嵐の主、あらわる';
+  $('#stageTitle .tip').textContent='バウ！が使い放題に（クールダウンあり）\n羽根弾を波にのせて撃ち返せ！ 突進はジャンプでかわせ';
+  const stt=$('#stageTitle');stt.style.opacity=1;
+  setTimeout(()=>stt.style.opacity=0,2400);
+  updItemBar();
+}
+function bossHurt(){
+  const b=A.boss;if(!b)return;
+  b.hp--;b.flash=10;SE.hit();
+  burst(b.x,b.y,'#ffe9b0');
+  if(b.hp<=0)bossDefeat();
+}
+function bossDefeat(){
+  const b=A.boss;
+  const bx=b.x,by=b.y;
+  for(let i=0;i<4;i++)setTimeout(()=>{if(A&&!A.over)burst(bx+(Math.random()-.5)*80,by+(Math.random()-.5)*50,'#ffd98a');},i*120);
+  SE.boss();
+  A.proj=[];A.boss=null;A.bossActive=false;A.bossDone=true;A.bossOut=80;
+  $('#debuff').textContent='嵐の主は、ただの迷子の風だった——空へ帰っていく';
+  updItemBar();
+}
+function updateBoss(){
+  const b=A.boss,d=A.dog;
+  b.ph++;if(b.flash>0)b.flash--;
+  if(A.barkCd>0){A.barkCd--;if(A.barkCd===0)updItemBar();}
+  $('#debuff').textContent='嵐の主 '+'♥'.repeat(Math.max(0,b.hp))+'♡'.repeat(Math.max(0,5-b.hp))+'　（バウ！で応戦）';
+  if(b.swoopT>=0){
+    // 突進：地面すれすれを横切る
+    b.swoopT++;
+    const u=b.swoopT/130;
+    b.x=680-880*u;
+    b.y=u<0.4?168+(GROUND-56-168)*(u/0.4):GROUND-56;
+    if(b.swoopT>=130){b.swoopT=-1;b.x=640;b.y=168;}
+    const invinc=d.inv>0||A.featherT>0;
+    if(!invinc&&Math.abs(b.x-d.x)<52&&Math.abs(b.y-(d.y-34))<48){hurt();if(A.over)return;}
+  }else{
+    b.y=168+Math.sin(b.ph*0.045)*24;
+    b.atk--;
+    if(b.atk<=0){
+      const px=b.x-42,py=b.y+6;
+      const tx=d.x,ty=d.y-28-(Math.random()<0.4?55:0);
+      const L=Math.hypot(tx-px,ty-py)||1,s=6.6+Math.random()*1.5;
+      A.proj.push({x:px,y:py,vx:(tx-px)/L*s,vy:(ty-py)/L*s,refl:false,rot:0,dead:false});
+      tone(560,0.08,'triangle',.3,-180);
+      b.atk=64+Math.random()*52;
+    }
+    if(b.ph%400===399)b.swoopT=0;
+  }
+  // 弾の移動と反射弾のボス命中
+  A.proj.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.rot+=0.25;});
+  for(const p of A.proj){
+    if(p.refl&&!p.dead&&A.boss&&Math.abs(p.x-A.boss.x)<48&&Math.abs(p.y-A.boss.y)<40){
+      p.dead=true;bossHurt();if(!A.boss)break;
+    }
+  }
+  A.proj=A.proj.filter(p=>!p.dead&&p.x>-40&&p.x<W+80&&p.y>-40&&p.y<H+40);
+}
+
+/* ---------- 描画 ---------- */
+function draw(prog,gliding){
+  const st=A.st,d=A.dog;
+  ctx.save();
+  if(A.shake>0){A.shake--;ctx.translate((Math.random()-.5)*A.shake,(Math.random()-.5)*A.shake);}
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,st.sky[0]);g.addColorStop(.6,st.sky[1]);g.addColorStop(1,st.sky[2]);
+  ctx.fillStyle=g;ctx.fillRect(-20,-20,W+40,H+40);
+  // 月と星
+  ctx.fillStyle='rgba(253,246,232,.95)';ctx.beginPath();ctx.arc(690,74,26,0,7);ctx.fill();
+  ctx.fillStyle=st.sky[0];ctx.beginPath();ctx.arc(700,66,22,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.5)';
+  for(let i=0;i<24;i++){ctx.fillRect(((i*137+A.t*0.1)%W),(i*61)%200+10,2,2);}
+  // 金色の光
+  const glow=ctx.createRadialGradient(760,150,4,760,150,80);
+  glow.addColorStop(0,'rgba(255,217,138,.85)');glow.addColorStop(1,'rgba(255,217,138,0)');
+  ctx.fillStyle=glow;ctx.beginPath();ctx.arc(760,150,80,0,7);ctx.fill();
+
+  drawSkyline();
+  // 地面
+  ctx.fillStyle=G.stage===2?'#1a2338':'#202a45';ctx.fillRect(-20,GROUND,W+40,H-GROUND);
+  // 穴
+  if(st.pits)A.gaps.forEach(gp=>{
+    const gd=ctx.createLinearGradient(0,GROUND,0,H);
+    gd.addColorStop(0,'#05070f');gd.addColorStop(1,'#0b0f20');
+    ctx.fillStyle=gd;ctx.fillRect(gp.x,GROUND-2,gp.w,H-GROUND+2);
+    ctx.fillStyle='rgba(255,190,107,.5)';
+    ctx.fillRect(gp.x-3,GROUND-3,3,10);ctx.fillRect(gp.x+gp.w,GROUND-3,3,10);
+  });
+  ctx.strokeStyle='rgba(255,190,107,.35)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(-20,GROUND);ctx.lineTo(W+20,GROUND);ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.08)';
+  for(let i=0;i<10;i++){const lx=(W-((A.t*st.speed)+i*110)%(W+120))+60;ctx.fillRect(lx,GROUND+26,52,5);}
+
+  // 記憶のかけら
+  A.orbs.forEach(o=>{
+    const yy=o.y+Math.sin(o.tk)*5;
+    const rg=ctx.createRadialGradient(o.x,yy,2,o.x,yy,o.r+8);
+    rg.addColorStop(0,'rgba(255,240,190,.95)');rg.addColorStop(1,'rgba(255,217,138,0)');
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(o.x,yy,o.r+8,0,7);ctx.fill();
+    ctx.fillStyle='#ffe9b0';ctx.beginPath();ctx.arc(o.x,yy,6,0,7);ctx.fill();
+  });
+  // アイテムドロップ
+  A.drops.forEach(o=>drawDrop(o));
+  A.obs.forEach(drawObs);
+  A.rivals.forEach(drawRival);
+  if(A.bossActive&&A.boss)drawBoss(A.boss);
+  // 羽根弾
+  A.proj.forEach(p=>{
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+    ctx.fillStyle=p.refl?'#ffe08a':'#3d4a78';
+    ctx.strokeStyle=p.refl?'#c9992f':'#22284a';ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.ellipse(0,0,4.5,12,0,0,7);ctx.fill();ctx.stroke();
+    ctx.restore();
+  });
+  drawDog(d,gliding);
+  // 1.5倍速中の風の線
+  if(A.lagT>0){
+    ctx.strokeStyle='rgba(230,240,255,.35)';ctx.lineWidth=2;
+    for(let i=0;i<6;i++){
+      const ly=60+((i*67)% (GROUND-90));
+      const lx=W-(((A.t*16)+i*150)%(W+180))+90;
+      ctx.beginPath();ctx.moveTo(lx,ly);ctx.lineTo(lx+70,ly);ctx.stroke();
+    }
+  }
+
+  // バウ！波
+  if(A.wave){
+    ctx.strokeStyle=`rgba(168,200,255,${A.wave.life/34})`;ctx.lineWidth=5;
+    ctx.beginPath();ctx.arc(d.x,d.y-38,A.wave.r,0,7);ctx.stroke();
+    ctx.strokeStyle=`rgba(255,233,176,${A.wave.life/40})`;ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(d.x,d.y-38,A.wave.r*0.7,0,7);ctx.stroke();
+  }
+  // パーティクル
+  A.parts.forEach(p=>{ctx.fillStyle=p.col;ctx.globalAlpha=Math.max(0,p.life/30);
+    ctx.beginPath();ctx.arc(p.x,p.y,3,0,7);ctx.fill();ctx.globalAlpha=1;});
+
+  // 雨
+  if(st.rain){
+    ctx.strokeStyle='rgba(180,200,255,.35)';ctx.lineWidth=1.4;
+    A.rain.forEach(r=>{r.y+=r.v;r.x-=3;if(r.y>H){r.y=-10;r.x=Math.random()*W;}
+      ctx.beginPath();ctx.moveTo(r.x,r.y);ctx.lineTo(r.x-3,r.y+r.l);ctx.stroke();});
+    if(Math.random()<0.006){A.flash=6;A.boltX=120+Math.random()*(W-240);}
+  }
+  // ---- 天候演出 ----
+  if(st.scene==='seaside'){
+    // 流れ星
+    if(Math.random()<0.005)A.mets.push({x:120+Math.random()*(W-240),y:24+Math.random()*80,life:34});
+    A.mets.forEach(m=>{m.x-=7.5;m.y+=3.2;m.life--;});
+    A.mets=A.mets.filter(m=>m.life>0);
+    A.mets.forEach(m=>{
+      ctx.strokeStyle=`rgba(255,246,220,${m.life/34*.9})`;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(m.x,m.y);ctx.lineTo(m.x+34,m.y-15);ctx.stroke();
+      ctx.fillStyle=`rgba(255,255,255,${m.life/34})`;
+      ctx.beginPath();ctx.arc(m.x,m.y,2.4,0,7);ctx.fill();
+    });
+  }
+  if(st.scene==='rooftop'){
+    // 夜霧のたなびき
+    for(let i=0;i<3;i++){
+      const fx=((A.t*(0.5+i*0.25))%(W+360))-180;
+      ctx.fillStyle=`rgba(190,200,230,${0.05+i*0.02})`;
+      ctx.beginPath();ctx.ellipse(W-fx,GROUND-24-i*36,170,17,0,0,7);ctx.fill();
+    }
+  }
+  if(st.scene==='bridge'){
+    // 雷雲
+    ctx.fillStyle='rgba(16,20,40,.85)';
+    for(let i=0;i<6;i++){
+      const cx2=((i*170+A.t*0.5)%(W+200))-100;
+      ctx.beginPath();ctx.ellipse(cx2,18+(i%2)*14,110,26,0,0,7);ctx.fill();
+    }
+    // 稲妻の枝
+    if(A.flash>2&&A.boltX){
+      ctx.strokeStyle=`rgba(255,250,210,${A.flash*0.13})`;ctx.lineWidth=3;
+      ctx.beginPath();let bx=A.boltX,by=8;
+      ctx.moveTo(bx,by);
+      for(let s=0;s<6;s++){bx+=(Math.random()-.5)*56;by+=34;ctx.lineTo(bx,by);}
+      ctx.stroke();
+    }
+  }
+  if(A.flash>0){ctx.fillStyle=`rgba(255,245,220,${A.flash*0.04})`;ctx.fillRect(-20,-20,W+40,H+40);A.flash--;}
+  ctx.restore();
+}
+function drawSkyline(){
+  const t=A.t,st=A.st,sc=st.scene;
+  // 遠景ビル（共通）
+  ctx.fillStyle='rgba(20,30,60,.9)';
+  for(let i=0;i<9;i++){
+    const bx=(W-((t*st.speed*0.25)+i*140)%(W+160));
+    const bh=70+((i*53)%110);
+    ctx.fillRect(bx,GROUND-bh-40,84,bh+40);
+    ctx.fillStyle='rgba(255,190,107,.28)';
+    for(let wy=0;wy<bh-14;wy+=20)for(let wx=8;wx<70;wx+=22)
+      if((i*7+wy+wx)%3!==0)ctx.fillRect(bx+wx,GROUND-bh-32+wy,7,9);
+    ctx.fillStyle='rgba(20,30,60,.9)';
+  }
+  // フジテレビ本社ビル（球体展望室）— 海浜公園・観覧車ステージで登場
+  if(sc!=='bridge'){
+    const fx=(W*1.1-((t*st.speed*0.32)%(W*2.2)));
+    drawFujiTV(fx);
+    // ゆりかもめの高架
+    const yV=GROUND-108;
+    ctx.strokeStyle='rgba(110,130,180,.55)';ctx.lineWidth=4;
+    ctx.beginPath();ctx.moveTo(-20,yV);ctx.lineTo(W+20,yV);ctx.stroke();
+    ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(-20,yV+7);ctx.lineTo(W+20,yV+7);ctx.stroke();
+    ctx.fillStyle='rgba(90,108,155,.5)';
+    for(let i=0;i<8;i++){
+      const px2=(W-((t*st.speed*0.4)+i*130)%(W+150));
+      ctx.fillRect(px2,yV+7,9,GROUND-yV-7);
+    }
+    // 車両（ときどき通過）
+    A.trainT--;
+    if(A.trainT<=0&&!A.train){A.train={x:W+380};}
+    if(A.train){
+      A.train.x-=10.5;
+      if(A.train.x<-520){A.train=null;A.trainT=560+Math.random()*320;}
+    }
+    if(A.train){
+      const tx2=A.train.x;
+      // ライトの尾
+      const lg=ctx.createLinearGradient(tx2-40,0,tx2+140,0);
+      lg.addColorStop(0,'rgba(255,240,190,0)');lg.addColorStop(1,'rgba(255,240,190,.4)');
+      ctx.fillStyle=lg;ctx.fillRect(tx2-40,yV-16,180,14);
+      for(let c=0;c<6;c++){
+        const cx3=tx2+c*74;
+        ctx.fillStyle='rgba(235,242,255,.92)';
+        ctx.beginPath();
+        if(ctx.roundRect)ctx.roundRect(cx3,yV-20,68,18,c===0?[9,4,4,4]:4);else ctx.rect(cx3,yV-20,68,18);
+        ctx.fill();
+        ctx.fillStyle='rgba(255,196,120,.85)';
+        for(let wx2=8;wx2<60;wx2+=13)ctx.fillRect(cx3+wx2,yV-16,8,8);
+      }
+      ctx.fillStyle='rgba(255,250,220,.95)';
+      ctx.beginPath();ctx.arc(tx2-2,yV-11,3,0,7);ctx.fill();
+    }
+  }
+  if(sc==='seaside'){
+    // 遠くのレインボーブリッジ
+    const bxo=(W*1.5-((t*st.speed*0.42)%(W*2.5)));
+    ctx.strokeStyle='rgba(150,180,230,.5)';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(bxo-260,GROUND-58);
+    ctx.quadraticCurveTo(bxo-130,GROUND-150,bxo,GROUND-58);
+    ctx.quadraticCurveTo(bxo+130,GROUND-150,bxo+260,GROUND-58);ctx.stroke();
+    ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(bxo-280,GROUND-56);ctx.lineTo(bxo+280,GROUND-56);ctx.stroke();
+    // お台場の自由の女神
+    const lx=(W*0.6-((t*st.speed*0.5)%(W*1.9)));
+    drawLiberty(lx);
+  }
+  if(sc==='rooftop'){
+    // パレットタウン風の大観覧車（大きく・カラフルに）
+    const fx=(W*1.7-((t*st.speed*0.35)%(W*2.4))),fy=GROUND-172,fr=104;
+    const cols=['rgba(255,120,140,.55)','rgba(255,200,90,.55)','rgba(120,220,170,.5)','rgba(120,170,255,.5)'];
+    ctx.lineWidth=3;
+    ctx.strokeStyle='rgba(255,255,255,.35)';
+    ctx.beginPath();ctx.arc(fx,fy,fr,0,7);ctx.stroke();
+    for(let a=0;a<12;a++){const th=a*Math.PI/6+t*0.004;
+      ctx.strokeStyle=cols[a%4];
+      ctx.beginPath();ctx.moveTo(fx,fy);ctx.lineTo(fx+Math.cos(th)*fr,fy+Math.sin(th)*fr);ctx.stroke();
+      // ゴンドラ
+      ctx.fillStyle=cols[a%4];
+      ctx.fillRect(fx+Math.cos(th)*fr-4,fy+Math.sin(th)*fr,8,10);
+    }
+    ctx.strokeStyle='rgba(255,255,255,.4)';
+    ctx.beginPath();ctx.moveTo(fx-44,GROUND);ctx.lineTo(fx,fy);ctx.lineTo(fx+44,GROUND);ctx.stroke();
+  }
+  if(sc==='bridge'){
+    // レインボーブリッジの上を走る：主塔＋吊りケーブル
+    const L=980,off=((t*st.speed)%L);
+    ctx.strokeStyle='rgba(160,185,235,.6)';
+    for(let k=-1;k<=1;k++){
+      const tx=W*0.5+k*L-off+L*0.5;
+      drawBridgeTower(tx);
+    }
+    // メインケーブルとハンガー
+    ctx.lineWidth=3;ctx.strokeStyle='rgba(160,185,235,.55)';
+    for(let k=-1;k<=1;k++){
+      const x1=W*0.5+(k)*L-off+L*0.5, x2=x1+L;
+      const yT=GROUND-268,yM=GROUND-96;
+      ctx.beginPath();ctx.moveTo(x1,yT);ctx.quadraticCurveTo((x1+x2)/2,yM,x2,yT);ctx.stroke();
+      ctx.lineWidth=1.4;
+      for(let u=0.08;u<0.95;u+=0.075){
+        const hx=x1+(x2-x1)*u;
+        const hy=(1-u)*(1-u)*yT+2*u*(1-u)*yM+u*u*yT;
+        ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(hx,GROUND-34);ctx.stroke();
+      }
+      ctx.lineWidth=3;
+    }
+    // 欄干
+    ctx.strokeStyle='rgba(160,185,235,.7)';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(-20,GROUND-34);ctx.lineTo(W+20,GROUND-34);ctx.stroke();
+    // 眼下の海のきらめき
+    ctx.fillStyle='rgba(140,180,240,.18)';
+    for(let i=0;i<7;i++){
+      const wx=((i*167+t*1.4)%(W+80))-40;
+      ctx.fillRect(wx,H-24+((i*13)%14),34,2.5);
+    }
+  }
+}
+function drawFujiTV(x){
+  const top=GROUND-176,w=170;
+  ctx.fillStyle='rgba(34,48,86,.95)';
+  // 左右のタワー
+  ctx.fillRect(x,top,26,GROUND-top);
+  ctx.fillRect(x+w-26,top,26,GROUND-top);
+  // 屋上部と中層の連結
+  ctx.fillRect(x,top,w,16);
+  ctx.fillRect(x,top+70,w,14);
+  ctx.fillRect(x,GROUND-46,w,20);
+  // 格子の空中回廊
+  ctx.strokeStyle='rgba(120,145,200,.5)';ctx.lineWidth=2;
+  for(let i=1;i<6;i++){
+    ctx.beginPath();ctx.moveTo(x+26,top+16+i*18);ctx.lineTo(x+w-26,top+16+i*18);ctx.stroke();
+  }
+  // 球体展望室
+  const cxx=x+w*0.62,cy=top+46;
+  const sg=ctx.createRadialGradient(cxx-7,cy-7,3,cxx,cy,25);
+  sg.addColorStop(0,'rgba(210,225,250,.85)');sg.addColorStop(1,'rgba(90,115,170,.9)');
+  ctx.fillStyle=sg;ctx.beginPath();ctx.arc(cxx,cy,24,0,7);ctx.fill();
+  // 窓あかり
+  ctx.fillStyle='rgba(255,190,107,.35)';
+  for(let yy=top+92;yy<GROUND-50;yy+=16){ctx.fillRect(x+6,yy,14,8);ctx.fillRect(x+w-20,yy,14,8);}
+}
+function drawLiberty(x){
+  ctx.save();ctx.translate(x,GROUND);
+  ctx.fillStyle='rgba(110,160,150,.75)';
+  // 台座
+  ctx.fillRect(-16,-34,32,34);
+  ctx.fillRect(-11,-46,22,12);
+  // 体
+  ctx.beginPath();ctx.moveTo(-8,-46);ctx.lineTo(-5,-84);ctx.lineTo(5,-84);ctx.lineTo(8,-46);ctx.closePath();ctx.fill();
+  // 頭と冠
+  ctx.beginPath();ctx.arc(0,-89,5,0,7);ctx.fill();
+  for(let i=-2;i<=2;i++){ctx.beginPath();ctx.moveTo(i*2.4,-93);ctx.lineTo(i*3.2,-100);ctx.lineTo(i*2.4+1.6,-93);ctx.fill();}
+  // 掲げた腕とたいまつ
+  ctx.strokeStyle='rgba(110,160,150,.75)';ctx.lineWidth=3.4;
+  ctx.beginPath();ctx.moveTo(5,-80);ctx.lineTo(14,-104);ctx.stroke();
+  ctx.fillStyle='rgba(255,210,120,.9)';ctx.beginPath();ctx.arc(15,-107,3.6,0,7);ctx.fill();
+  ctx.restore();
+}
+function drawBridgeTower(x){
+  ctx.fillStyle='rgba(52,68,110,.95)';
+  // 2本柱＋梁のH型主塔
+  ctx.fillRect(x-30,GROUND-272,14,272);
+  ctx.fillRect(x+16,GROUND-272,14,272);
+  ctx.fillRect(x-30,GROUND-272,60,12);
+  ctx.fillRect(x-30,GROUND-190,60,10);
+  ctx.fillRect(x-30,GROUND-104,60,10);
+  // 航空障害灯
+  ctx.fillStyle='rgba(255,110,110,.9)';
+  ctx.beginPath();ctx.arc(x-23,GROUND-276,3,0,7);ctx.fill();
+  ctx.beginPath();ctx.arc(x+23,GROUND-276,3,0,7);ctx.fill();
+}
+function drawDrop(o){
+  const yy=o.y+Math.sin(o.tk*2)*5;
+  ctx.save();ctx.translate(o.x,yy);
+  const rg=ctx.createRadialGradient(0,0,2,0,0,22);
+  rg.addColorStop(0,'rgba(255,255,255,.35)');rg.addColorStop(1,'rgba(255,255,255,0)');
+  ctx.fillStyle=rg;ctx.beginPath();ctx.arc(0,0,22,0,7);ctx.fill();
+  if(o.type==='snack'){ // 骨型ビスケット
+    ctx.fillStyle='#f0d9ac';ctx.strokeStyle='#c9a86a';ctx.lineWidth=1.5;
+    ctx.beginPath();
+    if(ctx.roundRect)ctx.roundRect(-9,-3.5,18,7,3);else ctx.rect(-9,-3.5,18,7);
+    ctx.fill();ctx.stroke();
+    [-9,9].forEach(x=>{[-4,4].forEach(y=>{ctx.beginPath();ctx.arc(x,y,4.5,0,7);ctx.fill();ctx.stroke();});});
+  }else if(o.type==='feather'){ // 金の羽
+    ctx.fillStyle='#ffe9a8';ctx.strokeStyle='#e8bd63';ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.ellipse(0,0,5,13,-.5,0,7);ctx.fill();ctx.stroke();
+    ctx.beginPath();ctx.moveTo(-6,10);ctx.lineTo(6,-10);ctx.stroke();
+  }else{ // bark: 音符
+    ctx.fillStyle='#a8c8ff';ctx.strokeStyle='#a8c8ff';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.ellipse(-3,7,5,4,-.3,0,7);ctx.fill();
+    ctx.beginPath();ctx.moveTo(2,6);ctx.lineTo(2,-10);ctx.quadraticCurveTo(9,-8,10,-2);ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawObs(o){
+  const y=o.fly?o.y:o.y-o.h;
+  ctx.save();ctx.translate(o.x,y);
+  if(o.k==='banner'){ // 上から下がるたれ幕（スライディングでくぐる）
+    // 吊りロープ
+    ctx.strokeStyle='rgba(200,210,235,.6)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(o.w/2,-40);ctx.lineTo(o.w/2,0);ctx.stroke();
+    // 布（ゆれる）
+    const sway=Math.sin(A.t*0.06+o.x*0.01)*5;
+    ctx.fillStyle='#e0607a';
+    ctx.beginPath();
+    ctx.moveTo(0,0);ctx.lineTo(o.w,0);
+    ctx.quadraticCurveTo(o.w+sway,o.h*0.5,o.w,o.h);
+    ctx.lineTo(0,o.h);
+    ctx.quadraticCurveTo(sway,o.h*0.5,0,0);
+    ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fdf6e8';
+    for(let sy=14;sy<o.h-10;sy+=42)ctx.fillRect(4,sy,o.w-8,16);
+    // 肉球マーク
+    ctx.fillStyle='#e0607a';
+    ctx.beginPath();ctx.arc(o.w/2,26,5,0,7);ctx.fill();
+  }
+  else if(o.k==='poop'){ // ソフトクリーム型
+    ctx.fillStyle='#7a5232';
+    ctx.beginPath();ctx.ellipse(o.w/2,o.h-6,o.w/2,7,0,0,7);ctx.fill();
+    ctx.beginPath();ctx.ellipse(o.w/2,o.h-13,o.w/2-5,6,0,0,7);ctx.fill();
+    ctx.beginPath();ctx.ellipse(o.w/2,o.h-19,o.w/2-10,5,0,0,7);ctx.fill();
+    ctx.beginPath();ctx.arc(o.w/2+1,o.h-24,3.5,0,7);ctx.fill();
+    // ゆらゆら匂い線
+    ctx.strokeStyle='rgba(190,220,160,.55)';ctx.lineWidth=1.6;
+    for(let i=-1;i<=1;i+=2){
+      const wob=Math.sin(A.t*0.12+i)*3;
+      ctx.beginPath();ctx.moveTo(o.w/2+i*9,o.h-26);
+      ctx.quadraticCurveTo(o.w/2+i*9+wob,o.h-36,o.w/2+i*9-wob,o.h-46);ctx.stroke();
+    }
+  }
+  else if(o.k==='cone'){ctx.fillStyle='#e0704f';ctx.beginPath();ctx.moveTo(o.w/2,0);ctx.lineTo(o.w,o.h);ctx.lineTo(0,o.h);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#fdf6e8';ctx.fillRect(o.w*0.22,o.h*0.5,o.w*0.56,6);}
+  else if(o.k==='box'||o.k==='debris'){ctx.fillStyle='#6b5a86';ctx.fillRect(0,0,o.w,o.h);ctx.strokeStyle='rgba(255,255,255,.25)';ctx.strokeRect(3,3,o.w-6,o.h-6);}
+  else if(o.k==='cat'){ctx.fillStyle='#3b4666';ctx.beginPath();ctx.ellipse(o.w/2,o.h*0.65,o.w/2,o.h*0.38,0,0,7);ctx.fill();
+    ctx.beginPath();ctx.arc(o.w*0.82,o.h*0.3,10,0,7);ctx.fill();
+    ctx.beginPath();ctx.moveTo(o.w*0.74,o.h*0.16);ctx.lineTo(o.w*0.78,-2);ctx.lineTo(o.w*0.84,o.h*0.14);ctx.fill();
+    ctx.beginPath();ctx.moveTo(o.w*0.84,o.h*0.14);ctx.lineTo(o.w*0.9,-2);ctx.lineTo(o.w*0.94,o.h*0.18);ctx.fill();
+    ctx.fillStyle='#ffd98a';ctx.fillRect(o.w*0.8,o.h*0.26,3,3);ctx.fillRect(o.w*0.88,o.h*0.26,3,3);}
+  else if(o.k==='duct'){ctx.fillStyle='#59688f';ctx.fillRect(0,0,o.w,o.h);ctx.fillStyle='#3d4a6e';for(let i=6;i<o.w-6;i+=10)ctx.fillRect(i,6,5,o.h-12);}
+  else if(o.k==='fence'){ctx.strokeStyle='#8b97b8';ctx.lineWidth=3;ctx.strokeRect(0,0,o.w,o.h);
+    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(o.w,o.h);ctx.moveTo(o.w,0);ctx.lineTo(0,o.h);ctx.stroke();}
+  else if(o.k==='wave'){ctx.fillStyle='rgba(120,170,220,.75)';ctx.beginPath();ctx.moveTo(0,o.h);
+    ctx.quadraticCurveTo(o.w*0.25,-6,o.w*0.5,o.h*0.5);ctx.quadraticCurveTo(o.w*0.75,-6,o.w,o.h);ctx.closePath();ctx.fill();}
+  else if(o.k==='crow'){ctx.fillStyle='#2c3350';const fl=Math.sin(A.t*0.3)*8;
+    ctx.beginPath();ctx.ellipse(o.w/2,o.h/2,15,9,0,0,7);ctx.fill();
+    ctx.beginPath();ctx.moveTo(o.w/2,o.h/2);ctx.lineTo(o.w/2-16,o.h/2-10-fl);ctx.lineTo(o.w/2-4,o.h/2);ctx.fill();
+    ctx.beginPath();ctx.moveTo(o.w/2,o.h/2);ctx.lineTo(o.w/2+16,o.h/2-10+fl);ctx.lineTo(o.w/2+4,o.h/2);ctx.fill();
+    ctx.fillStyle='#ffbe6b';ctx.beginPath();ctx.moveTo(o.w/2+14,o.h/2);ctx.lineTo(o.w/2+22,o.h/2+2);ctx.lineTo(o.w/2+14,o.h/2+5);ctx.fill();}
+  ctx.restore();
+}
+function drawRival(r){
+  const bob=Math.sin(r.run*2)*2.2;
+  ctx.save();ctx.translate(r.x,r.y+bob);
+  // 脚（4本）
+  ctx.lineWidth=6;ctx.lineCap='round';
+  const ph=r.run*2;
+  [[-15,Math.sin(ph)*9,true],[-8,Math.sin(ph+0.7)*9,false],
+   [8,Math.sin(ph+Math.PI)*9,true],[15,Math.sin(ph+Math.PI+0.7)*9,false]].forEach(([lx,sw,back])=>{
+    ctx.strokeStyle=back?'#b47a3f':'#c98d4e';
+    ctx.beginPath();ctx.moveTo(lx,-15);ctx.lineTo(lx+sw,0);ctx.stroke();
+  });
+  // しっぽ（右・くるん）
+  ctx.fillStyle='#d69a5a';
+  ctx.beginPath();ctx.arc(24,-38,9,0,7);ctx.fill();
+  ctx.fillStyle='#fbf2dd';ctx.beginPath();ctx.arc(24,-38,4,0,7);ctx.fill();
+  // 胴体
+  const rg2=ctx.createRadialGradient(0,-28,4,0,-26,28);
+  rg2.addColorStop(0,'#e5ad6c');rg2.addColorStop(1,'#c98d4e');
+  ctx.fillStyle=rg2;ctx.beginPath();ctx.ellipse(2,-27,24,17,0,0,7);ctx.fill();
+  ctx.fillStyle='#fbf2dd';ctx.beginPath();ctx.ellipse(-8,-22,11,10,0,0,7);ctx.fill();
+  // 頭（左向き）
+  ctx.fillStyle=rg2;ctx.beginPath();ctx.arc(-19,-42,14,0,7);ctx.fill();
+  // 耳
+  ctx.fillStyle='#c98d4e';
+  ctx.beginPath();ctx.moveTo(-25,-52);ctx.lineTo(-28,-64);ctx.lineTo(-16,-54);ctx.fill();
+  ctx.beginPath();ctx.moveTo(-13,-54);ctx.lineTo(-8,-65);ctx.lineTo(-6,-51);ctx.fill();
+  // 顔
+  ctx.fillStyle='#fbf2dd';ctx.beginPath();ctx.ellipse(-27,-38,7,6,0,0,7);ctx.fill();
+  ctx.fillStyle='#2a1c14';ctx.beginPath();ctx.arc(-22,-43,2.6,0,7);ctx.fill();
+  ctx.fillStyle='#241a16';ctx.beginPath();ctx.arc(-32,-39,2.8,0,7);ctx.fill();
+  ctx.restore();
+}
+function drawBoss(b){
+  ctx.save();ctx.translate(b.x,b.y);
+  if(b.flash>0)ctx.globalAlpha=0.55;
+  const fl=Math.sin(b.ph*0.17)*22;
+  // 嵐のオーラ
+  const au=ctx.createRadialGradient(0,0,10,0,0,95);
+  au.addColorStop(0,'rgba(95,115,175,.30)');au.addColorStop(1,'rgba(95,115,175,0)');
+  ctx.fillStyle=au;ctx.beginPath();ctx.arc(0,0,95,0,7);ctx.fill();
+  ctx.fillStyle='#232a4a';
+  // 翼
+  ctx.beginPath();ctx.moveTo(0,-6);
+  ctx.quadraticCurveTo(-24,-64-fl,-64,-84-fl);
+  ctx.quadraticCurveTo(-30,-40,-8,-2);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(6,-8);
+  ctx.quadraticCurveTo(56,-58+fl,104,-52+fl);
+  ctx.quadraticCurveTo(56,-16,10,4);ctx.closePath();ctx.fill();
+  // 胴体・尾羽
+  ctx.beginPath();ctx.ellipse(0,2,50,30,0,0,7);ctx.fill();
+  ctx.beginPath();ctx.moveTo(42,0);ctx.lineTo(84,-8);ctx.lineTo(84,14);ctx.lineTo(42,12);ctx.closePath();ctx.fill();
+  // 頭・くちばし
+  ctx.beginPath();ctx.arc(-44,-14,19,0,7);ctx.fill();
+  ctx.fillStyle='#ffbe6b';
+  ctx.beginPath();ctx.moveTo(-58,-16);ctx.lineTo(-84,-9);ctx.lineTo(-58,-4);ctx.closePath();ctx.fill();
+  // 赤く光る目
+  ctx.fillStyle='#ff5d6c';
+  ctx.beginPath();ctx.arc(-49,-20,4.4,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,93,108,.35)';
+  ctx.beginPath();ctx.arc(-49,-20,8,0,7);ctx.fill();
+  ctx.restore();
+}
+function drawDog(d,gliding){
+  if(d.inv>0&&Math.floor(d.inv/5)%2===0)return;
+  const air=d.y<GROUND-2;
+  const bob=air?0:Math.sin(d.run*2)*2.2;
+  const x=d.x,y=d.y+bob;
+  ctx.save();ctx.translate(x,y);
+  if(d.slide>0&&!air)ctx.scale(1.18,0.6); // スライディング：低く伸びる
+  // 天使のはね効果：金色オーラ
+  if(A.featherT>0){
+    const au=ctx.createRadialGradient(0,-34,6,0,-34,52);
+    au.addColorStop(0,'rgba(255,233,176,.4)');au.addColorStop(1,'rgba(255,233,176,0)');
+    ctx.fillStyle=au;ctx.beginPath();ctx.arc(0,-34,52,0,7);ctx.fill();
+  }
+  // 滑空中の翼
+  if((gliding||A.featherT>0)&&air){
+    const fl=Math.sin(A.t*0.35)*6;
+    ctx.fillStyle='rgba(255,250,235,.92)';
+    ctx.beginPath();ctx.moveTo(-6,-38);
+    ctx.quadraticCurveTo(-34,-58-fl,-46,-44-fl);
+    ctx.quadraticCurveTo(-30,-40,-8,-32);ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.moveTo(2,-40);
+    ctx.quadraticCurveTo(-16,-66-fl,-34,-62-fl);
+    ctx.quadraticCurveTo(-18,-48,0,-36);ctx.closePath();ctx.fill();
+  }
+  // しっぽ
+  ctx.fillStyle='#ecd2a0';
+  ctx.beginPath();ctx.ellipse(-26,-36+Math.sin(d.run*2)*3,14,10,-.6,0,7);ctx.fill();
+  // 脚（4本：後脚ペアと前脚ペアが逆位相のギャロップ）
+  ctx.strokeStyle='#e8cb96';ctx.lineWidth=6.5;ctx.lineCap='round';
+  const ph=d.run*2;
+  const legs=air
+    ? [[-17,-7],[-9,-5],[9,6],[16,9]]  // 空中：後脚は後ろへ、前脚は前へ伸ばす
+    : [[-17,Math.sin(ph)*10],[-9,Math.sin(ph+0.7)*10],
+       [9,Math.sin(ph+Math.PI)*10],[16,Math.sin(ph+Math.PI+0.7)*10]];
+  // 奥側の2本（後脚1・前脚1）を先に暗めで描く
+  [[legs[0],true],[legs[2],true],[legs[1],false],[legs[3],false]].forEach(([L,back])=>{
+    const [lx,sw]=L;
+    ctx.strokeStyle=back?'#d9b87e':'#f0d9ac';
+    ctx.beginPath();ctx.moveTo(lx,-16);ctx.lineTo(lx+sw,0);ctx.stroke();
+    ctx.fillStyle=back?'#efe3c8':'#fffdf6';
+    ctx.beginPath();ctx.arc(lx+sw,0,4.3,0,7);ctx.fill();
+  });
+  // 胴体
+  const bg=ctx.createRadialGradient(0,-30,4,0,-28,30);
+  bg.addColorStop(0,'#f8ecd2');bg.addColorStop(1,'#e8c88f');
+  ctx.fillStyle=bg;ctx.beginPath();ctx.ellipse(-2,-28,26,19,0,0,7);ctx.fill();
+  ctx.fillStyle='#fbf2dd';ctx.beginPath();ctx.ellipse(8,-24,13,12,0,0,7);ctx.fill();
+  // 頭
+  ctx.fillStyle=bg;ctx.beginPath();ctx.arc(20,-44,15,0,7);ctx.fill();
+  // 耳
+  ctx.fillStyle='#e8c78e';
+  ctx.beginPath();ctx.moveTo(11,-52);ctx.lineTo(9,-66);ctx.lineTo(20,-56);ctx.fill();
+  ctx.beginPath();ctx.moveTo(24,-56);ctx.lineTo(30,-68);ctx.lineTo(33,-52);ctx.fill();
+  // リボン
+  ctx.fillStyle='#f78fb0';
+  ctx.beginPath();ctx.moveTo(10,-62);ctx.lineTo(4,-67);ctx.lineTo(6,-58);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(10,-62);ctx.lineTo(16,-68);ctx.lineTo(15,-59);ctx.closePath();ctx.fill();
+  // 顔
+  ctx.fillStyle='#2a1c14';ctx.beginPath();ctx.arc(24,-45,2.8,0,7);ctx.fill();
+  ctx.fillStyle='#241a16';ctx.beginPath();ctx.arc(34,-42,3,0,7);ctx.fill();
+  ctx.restore();
+}
+
+/* ---------- ステージ結果 ---------- */
+function clearStage(){
+  cancelAnimationFrame(rafId);
+  setBGM('story');
+  $('#debuff').textContent='';
+  G.orbs+=A.got;G.orbMax+=A.st.orbTotal;
+  $('#resTitle').textContent='STAGE CLEAR';
+  $('#resOrbs').textContent=`✦ 記憶のかけら +${A.got}（合計 ${G.orbs}）`;
+  const msgs=[
+    '倉庫街の入口で、匂いの糸がふっと濃くなった。まちがいない、この先だ。',
+    '屋上の風は、あの人のマフラーと同じ方向になびいていた。背中がすこし、あたたかい。',
+    '嵐の向こう、白い塔の橋。金色の光が、すぐそこで待っている。',
+  ];
+  $('#resText').textContent=msgs[G.stage];
+  $('#resBtn').textContent=G.stage<2?'つづける':'橋の上へ';
+  show('result');
+}
+function failStage(reason){
+  cancelAnimationFrame(rafId);A.over=true;
+  setBGM('story');
+  $('#debuff').textContent='';
+  if(reason==='poop'){
+    $('#resTitle').textContent='ふんでしまった……';
+    $('#resOrbs').textContent='';
+    $('#resText').textContent='……よりにもよって。うゆはしばらく、自分の前足を無言で見つめた。だいじょうぶ、誰も見ていない。海風に気を取り直して、もう一度走ろう。（💩はジャンプでよけるか、バウ！で消せる）';
+  }else{
+    $('#resTitle').textContent='ころんでしまった…';
+    $('#resOrbs').textContent='';
+    $('#resText').textContent='遠くで、ビスケの遠吠えが聞こえた気がした。「まだ走れるでしょ」って。……うん、走れる。もう一度、匂いの糸をたどろう。';
+  }
+  $('#resBtn').textContent='もういちど走る';
+  show('result');
+  $('#resBtn').onclick=()=>{bindResBtn();startStage(G.stage);};
+}
+function bindResBtn(){
+  $('#resBtn').onclick=()=>{
+    if(G.stage===0)startScene(1);
+    else if(G.stage===1)startScene(2);
+    else showEnding();
+  };
+}
+bindResBtn();
+
+/* ---------- エンディング ---------- */
+function showEnding(){
+  const ratio=G.orbMax?G.orbs/G.orbMax:0;
+  let t,s,body,rank;
+  if(ratio>=0.7&&G.kizuna>=5){
+    rank=3;t='おかえりの音';s='— TRUE END —';
+    body=`橋の上、金色の光の中に、見慣れたコートの背中があった。終電を逃し、電話も切れて、雨の中をとぼとぼ歩いていたあの人。\n\nうゆは走った。心臓の音のとおりに。ふりむいたあの人は、一瞬ぽかんとして——それから、板橋のあの日とまったく同じ顔で、泣きそうに笑った。「……迎えに来てくれたの」\n\n「おかえり」は、待つだけの言葉じゃない。ずぶ濡れの手のひらの、世界でいちばんあたたかい匂いの中で、うゆはしっぽが千切れるほど振った。その背中で一瞬だけ、たしかに小さな翼が光った。\n\n帰り道、ひとりぶんの足音と四つの肉球の音。家では、玄関のいちばん見える場所にビスケが座っていて——ふたりの顔を見るなり、素知らぬ顔であくびをした。耳の先だけ、うれしそうに揺れていた。`;
+  }else if(ratio>=0.4){
+    rank=2;t='朝の光';s='— GOOD END —';
+    body=`嵐が過ぎて、空が白みはじめたころ。うゆが家の前まで戻ると、ちょうどタクシーが停まった。降りてきたあの人は、玄関先に座るうゆと、窓辺に張りついたビスケを見て目を丸くした。\n\n「え、なんで外に……まさか、探しに来てくれた？」\n\n答えの代わりに、うゆは一度だけ「わん」と鳴いた。集めきれなかった記憶のかけらは、まだ夜の街のどこかで光っている。——また今度、三人（と二頭）の散歩のときに拾いにいこう。`;
+  }else{
+    rank=1;t='まどろみ';s='— ANOTHER END —';
+    body=`……かちゃり。\n\n鍵の音で、うゆはソファの上で目を覚ました。窓の外に金色の光はなく、ただいつもの夜景があるだけ。あれは夢だったんだろうか。\n\nでも、肉球にはたしかに夜風の冷たさが残っていて、となりのビスケの毛布には、骨型ビスケットがひとつ足りない。玄関に立つあの人は、なぜか少しだけ泣いたあとの匂いがした。うゆは何も聞かずに、ただ全力でしっぽを振った。今夜はそれでいい。`;
+  }
+  $('#endTitle').textContent=t;
+  $('#endSub').textContent=s;
+  $('#endText').textContent=body;
+  const secs=(Date.now()-G.t0)/1000;
+  $('#endStats').textContent=`記憶のかけら ${G.orbs}/${G.orbMax} ・ きずな ${G.kizuna} ・ クリアタイム ${fmtTime(secs)}（LV${G.level}）`;
+  // TRUE ENDへのヒント（そっと）
+  let hint='';
+  if(rank<3){
+    const miss=[];
+    if(ratio<0.7)miss.push('……夜の街には、拾われなかった記憶のかけらが、まだ光っていた。');
+    if(G.kizuna<5)miss.push('……夜のだれかに、もうすこし心をひらいて答えていたら、なにかが変わったのかもしれない。');
+    hint=miss.join('\n');
+  }
+  $('#endHint').textContent=hint;
+  // ベスト記録更新（エンド優先→かけら数）
+  const rec=G.records[G.level];
+  if(!rec||rank>rec.rank||(rank===rec.rank&&G.orbs>rec.orbs)||(rank===rec.rank&&G.orbs===rec.orbs&&secs<rec.time)){
+    G.records[G.level]={orbs:G.orbs,max:G.orbMax,rank,time:secs};
+  }
+  setBGM('story');
+  show('ending');
+}
+$('#endText').style.whiteSpace='pre-line';
+$('#endText').style.textAlign='left';
+
+/* ---------- 開始/リトライ ---------- */
+document.querySelectorAll('.lvBtn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.lvBtn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');G.level=+b.dataset.lv;
+  });
+});
+$('#startBtn').onclick=()=>{
+  audioInit();
+  G.orbs=0;G.orbMax=0;G.kizuna=0;G.t0=Date.now();
+  G.items={snack:0,feather:0,bark:0};
+  startScene(0);
+};
+$('#againBtn').onclick=()=>{setBGM(null);renderRecords();show('title');};
+$('#muteBtn').onclick=()=>{
+  audioInit();
+  SND.mute=!SND.mute;
+  $('#muteBtn').classList.toggle('off',SND.mute);
+  $('#muteBtn').textContent=SND.mute?'✕':'♪';
+};
+renderRecords();
+</script>
+</body>
+</html>
