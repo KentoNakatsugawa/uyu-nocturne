@@ -453,7 +453,7 @@ const POM_SVG=`
 
 /* ---------- ゲーム状態 ---------- */
 const NAME='うゆ';
-const G={orbs:0,orbMax:0,kizuna:0,hearts:3,stage:0,level:1,items:{snack:1,feather:0,bark:0},records:{},t0:0};
+const G={orbs:0,orbMax:0,kizuna:0,hearts:3,stage:0,level:1,items:{snack:1,feather:0,bark:0},records:{},t0:0,pausedMs:0,pauseStart:0};
 const RANK_NAMES={3:'TRUE END',2:'GOOD END',1:'ANOTHER END'};
 function fmtTime(s){return `${Math.floor(s/60)}分${String(Math.floor(s%60)).padStart(2,'0')}秒`;}
 function renderRecords(){
@@ -753,6 +753,7 @@ $('#slideBtn').addEventListener('pointerdown',e=>{
 function togglePause(){
   if(!A||A.over||paused)return;
   paused=true;cancelAnimationFrame(rafId);
+  G.pauseStart=Date.now(); // ポーズ中はクリアタイムに含めない
   $('#cdNum').textContent='';
   $('#pauseOv').classList.add('on');
 }
@@ -765,6 +766,7 @@ $('#resumeBtn').addEventListener('click',()=>{
     if(n<=0){clearInterval(iv);
       $('#pauseOv').classList.remove('on');
       $('#resumeBtn').style.display='';
+      if(G.pauseStart){G.pausedMs+=Date.now()-G.pauseStart;G.pauseStart=0;} // ポーズ経過分を除外
       paused=false;
       cancelAnimationFrame(rafId);loop();
     }else $('#cdNum').textContent=n;
@@ -1650,7 +1652,7 @@ function showEnding(){
   }
   $('#endTitle').textContent=t;
   $('#endSub').textContent=s;
-  const secs=(Date.now()-G.t0)/1000;
+  const secs=(Date.now()-G.t0-G.pausedMs)/1000;
   $('#endStats').textContent=`記憶のかけら ${G.orbs}/${G.orbMax} ・ きずな ${G.kizuna} ・ クリアタイム ${fmtTime(secs)}（LV${G.level}）`;
   // TRUE ENDへのヒント（そっと）
   let hint='';
@@ -1708,7 +1710,7 @@ document.querySelectorAll('.lvBtn').forEach(b=>{
 });
 $('#startBtn').onclick=()=>{
   audioInit();
-  G.orbs=0;G.orbMax=0;G.kizuna=0;G.t0=Date.now();
+  G.orbs=0;G.orbMax=0;G.kizuna=0;G.t0=Date.now();G.pausedMs=0;G.pauseStart=0;
   G.items={snack:0,feather:0,bark:0};
   startScene(0);
 };
