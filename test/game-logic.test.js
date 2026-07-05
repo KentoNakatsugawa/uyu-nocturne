@@ -1,0 +1,81 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert');
+const { loadGame } = require('../test-support/load-game');
+
+// これが例外なく通ること自体が「スクリプトがロードできる」スモークテスト
+const G = loadGame();
+
+test('スモーク：主要な純粋関数がエクスポートされている', () => {
+  for (const name of ['nf', 'fmtTime', 'buildSong', 'endingRank', 'betterRecord']) {
+    assert.equal(typeof G[name], 'function', name + ' が関数として存在する');
+  }
+  assert.equal(typeof G.SONGDEF, 'object');
+  assert.equal(typeof G.RANK_NAMES, 'object');
+});
+
+test('nf：音名→周波数（A4=440基準）', () => {
+  assert.ok(Math.abs(G.nf('A4') - 440) < 1e-6);
+  assert.ok(Math.abs(G.nf('C4') - 261.6256) < 0.01);
+  assert.ok(Math.abs(G.nf('A5') - 880) < 1e-6, 'オクターブ上は2倍');
+  assert.ok(Math.abs(G.nf('A3') - 220) < 1e-6, 'オクターブ下は半分');
+  assert.ok(Math.abs(G.nf('A#3') - G.nf('Bb3')) < 1e-6, '異名同音（A#3とBb3）は同じ');
+  assert.equal(G.nf(0), 0, '休符(0)は0Hz');
+  assert.equal(G.nf(''), 0);
+});
+
+test('fmtTime：秒→「M分SS秒」（秒は2桁ゼロ埋め・切り捨て）', () => {
+  assert.equal(G.fmtTime(0), '0分00秒');
+  assert.equal(G.fmtTime(5), '0分05秒');
+  assert.equal(G.fmtTime(65), '1分05秒');
+  assert.equal(G.fmtTime(600), '10分00秒');
+  assert.equal(G.fmtTime(59.9), '0分59秒', '端数は切り捨て');
+});
+
+test('endingRank：回収率×きずなで 3/2/1 に分岐', () => {
+  assert.equal(G.endingRank(0.7, 5), 3, 'TRUE条件ちょうど');
+  assert.equal(G.endingRank(1, 10), 3);
+  assert.equal(G.endingRank(0.7, 4), 2, 'きずな不足だとTRUEにならない');
+  assert.equal(G.endingRank(0.69, 9), 2, '回収率不足だとTRUEにならない');
+  assert.equal(G.endingRank(0.4, 0), 2, 'GOOD条件ちょうど');
+  assert.equal(G.endingRank(0.39, 9), 1, 'ANOTHER');
+  assert.equal(G.endingRank(0, 0), 1);
+});
+
+test('betterRecord：ランク > かけら数 > タイム（短い方）の優先度', () => {
+  assert.equal(G.betterRecord(null, { rank: 1, orbs: 0, time: 999 }), true, '記録なしは常に更新');
+  // ランク優先
+  assert.equal(G.betterRecord({ rank: 2, orbs: 99, time: 1 }, { rank: 3, orbs: 0, time: 999 }), true);
+  assert.equal(G.betterRecord({ rank: 3, orbs: 0, time: 999 }, { rank: 2, orbs: 99, time: 1 }), false);
+  // 同ランクならかけら数
+  assert.equal(G.betterRecord({ rank: 2, orbs: 5, time: 1 }, { rank: 2, orbs: 6, time: 999 }), true);
+  assert.equal(G.betterRecord({ rank: 2, orbs: 6, time: 999 }, { rank: 2, orbs: 5, time: 1 }), false);
+  // 同ランク・同かけらならタイムが短い方
+  assert.equal(G.betterRecord({ rank: 2, orbs: 6, time: 100 }, { rank: 2, orbs: 6, time: 99 }), true);
+  assert.equal(G.betterRecord({ rank: 2, orbs: 6, time: 99 }, { rank: 2, orbs: 6, time: 100 }), false);
+  // 完全同一は更新しない
+  assert.equal(G.betterRecord({ rank: 2, orbs: 6, time: 100 }, { rank: 2, orbs: 6, time: 100 }), false);
+});
+
+test('buildSong：各曲が「16分 × 小節数」ぶんのステップ列になる', () => {
+  for (const name of ['story', 'action', 'boss']) {
+    const def = G.SONGDEF[name];
+    const song = G.buildSong(def);
+    assert.equal(song.steps.length, def.chords.length * 16, name + ' のステップ数 = 小節数×16');
+    assert.ok(song.stepMs > 0, name + ' の stepMs は正');
+    assert.ok(song.steps.some(s => s.bass), name + ' にベース音がある');
+    // lead/arp は休符(0)か正の周波数のいずれか
+    for (const st of song.steps) {
+      if (st.lead) assert.ok(st.lead > 0, name + ' の lead は正の周波数');
+      if (st.arp) assert.ok(st.arp > 0, name + ' の arp は正の周波数');
+    }
+  }
+});
+
+test('buildSong：ベース音は各小節ルート音の1オクターブ下', () => {
+  const def = G.SONGDEF.story;
+  const song = G.buildSong(def);
+  const root = G.nf(def.chords[0][0]); // 1小節目のルート
+  const firstBass = song.steps.find(s => s.bass).bass;
+  assert.ok(Math.abs(firstBass - root / 2) < 1e-6);
+});

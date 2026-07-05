@@ -1,0 +1,9 @@
+{
+  "name": "uyu-nocturne",
+  "version": "1.0.0",
+  "private": true,
+  "description": "うゆの夜想曲 — 純粋ロジックのユニットテスト（ゲーム本体は index.html 単一ファイル）",
+  "scripts": {
+    "test": "node --test"
+  }
+}

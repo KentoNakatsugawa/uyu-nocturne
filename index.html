@@ -1636,18 +1636,34 @@ function bindResBtn(){
 }
 bindResBtn();
 
+/* ---------- エンディング判定（純粋関数：test/game-logic.test.js で検証） ---------- */
+// 記憶回収率ときずなから 3=TRUE / 2=GOOD / 1=ANOTHER を決める
+function endingRank(ratio,kizuna){
+  if(ratio>=0.7&&kizuna>=5)return 3;
+  if(ratio>=0.4)return 2;
+  return 1;
+}
+// ベスト記録を更新すべきか。優先度：ランク > かけら数 > タイム（短いほど良い）
+function betterRecord(prev,cand){
+  if(!prev)return true;
+  if(cand.rank!==prev.rank)return cand.rank>prev.rank;
+  if(cand.orbs!==prev.orbs)return cand.orbs>prev.orbs;
+  return cand.time<prev.time;
+}
+
 /* ---------- エンディング ---------- */
 function showEnding(){
   const ratio=G.orbMax?G.orbs/G.orbMax:0;
-  let t,s,body,rank;
-  if(ratio>=0.7&&G.kizuna>=5){
-    rank=3;t='おかえりの音';s='— TRUE END —';
+  const rank=endingRank(ratio,G.kizuna);
+  let t,s,body;
+  if(rank===3){
+    t='おかえりの音';s='— TRUE END —';
     body=`橋の上、金色の光の中に、見慣れたコートの背中があった。終電を逃し、電話も切れて、雨の中をとぼとぼ歩いていたあの人。\n\nうゆは走った。心臓の音のとおりに。ふりむいたあの人は、一瞬ぽかんとして——それから、板橋のあの日とまったく同じ顔で、泣きそうに笑った。「……迎えに来てくれたの」\n\n「おかえり」は、待つだけの言葉じゃない。ずぶ濡れの手のひらの、世界でいちばんあたたかい匂いの中で、うゆはしっぽが千切れるほど振った。その背中で一瞬だけ、たしかに小さな翼が光った。\n\n帰り道、ひとりぶんの足音と四つの肉球の音。家では、玄関のいちばん見える場所にビスケが座っていて——ふたりの顔を見るなり、素知らぬ顔であくびをした。耳の先だけ、うれしそうに揺れていた。`;
-  }else if(ratio>=0.4){
-    rank=2;t='朝の光';s='— GOOD END —';
+  }else if(rank===2){
+    t='朝の光';s='— GOOD END —';
     body=`嵐が過ぎて、空が白みはじめたころ。うゆが家の前まで戻ると、ちょうどタクシーが停まった。降りてきたあの人は、玄関先に座るうゆと、窓辺に張りついたビスケを見て目を丸くした。\n\n「え、なんで外に……まさか、探しに来てくれた？」\n\n答えの代わりに、うゆは一度だけ「わん」と鳴いた。集めきれなかった記憶のかけらは、まだ夜の街のどこかで光っている。——また今度、三人（と二頭）の散歩のときに拾いにいこう。`;
   }else{
-    rank=1;t='まどろみ';s='— ANOTHER END —';
+    t='まどろみ';s='— ANOTHER END —';
     body=`……かちゃり。\n\n鍵の音で、うゆはソファの上で目を覚ました。窓の外に金色の光はなく、ただいつもの夜景があるだけ。あれは夢だったんだろうか。\n\nでも、肉球にはたしかに夜風の冷たさが残っていて、となりのビスケの毛布には、骨型ビスケットがひとつ足りない。玄関に立つあの人は、なぜか少しだけ泣いたあとの匂いがした。うゆは何も聞かずに、ただ全力でしっぽを振った。今夜はそれでいい。`;
   }
   $('#endTitle').textContent=t;
@@ -1666,7 +1682,7 @@ function showEnding(){
   $('#endHint').textContent=hint;
   // ベスト記録更新（エンド優先→かけら数）
   const rec=G.records[G.level];
-  if(!rec||rank>rec.rank||(rank===rec.rank&&G.orbs>rec.orbs)||(rank===rec.rank&&G.orbs===rec.orbs&&secs<rec.time)){
+  if(betterRecord(rec,{rank,orbs:G.orbs,time:secs})){
     G.records[G.level]={orbs:G.orbs,max:G.orbMax,rank,time:secs};
   }
   // 段落を1つずつタップで送るエピローグ表示（長文あふれ・ボタン到達不可の解消）
@@ -1722,6 +1738,11 @@ $('#muteBtn').onclick=()=>{
   $('#muteBtn').textContent=SND.mute?'✕':'♪';
 };
 renderRecords();
+
+/* --- テスト用エクスポート：ブラウザでは module が未定義なので実行されない（ゲーム動作に影響なし） --- */
+if(typeof module!=='undefined'&&module.exports){
+  module.exports={nf,fmtTime,buildSong,SONGDEF,endingRank,betterRecord,RANK_NAMES};
+}
 </script>
 </body>
 </html>
