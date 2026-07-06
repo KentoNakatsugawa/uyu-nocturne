@@ -1,0 +1,5 @@
+# 公開するのは index.html のみ（テスト・開発用ファイルは配信しない）
+test/
+test-support/
+package.json
+README.md
