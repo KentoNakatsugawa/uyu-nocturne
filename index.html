@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <!-- セキュリティ: 外部リソースの読み込み・外部への送信を全面禁止（このゲームは完全自己完結） -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; media-src 'none'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; media-src 'none'; connect-src 'self' https://uyu-nocturne.vercel.app; object-src 'none'; base-uri 'none'; form-action 'none'">
 <!-- 検索避け: URLを知っている人だけの限定公開 -->
 <meta name="robots" content="noindex, nofollow">
 <title>うゆの夜想曲 — 板橋に落ちてきた天使</title>
@@ -524,15 +524,41 @@ function loadName(){try{return localStorage.getItem(NAME_KEY)||'';}catch(e){retu
 function saveName(n){try{localStorage.setItem(NAME_KEY,n);}catch(e){}}
 // 名前は innerHTML に流すので必ずエスケープ
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function renderRanking(hiIdx){
-  const box=$('#rankBox'),l=loadRanking();
-  if(!l.length){box.innerHTML='';return;}
-  let h='<div class="rkTitle">🏆 ランキング</div><table>';
-  l.slice(0,5).forEach((e,i)=>{
-    h+=`<tr${i===hiIdx?' class="me"':''}><td>${i+1}</td><td>${esc(e.name)}</td><td>LV${e.lv}</td><td>${RANK_NAMES[e.rank]}</td><td>✦${e.orbs}/${e.max}</td><td>${fmtTime(e.time)}</td></tr>`;
+function renderRankingBox(list,title,hi){ // hi: 直近スコア {name,time}（強調表示用）
+  const box=$('#rankBox');
+  if(!list.length){box.innerHTML='';return;}
+  let h=`<div class="rkTitle">${title}</div><table>`;
+  list.slice(0,5).forEach((e,i)=>{
+    const me=hi&&e.name===hi.name&&Math.abs(e.time-hi.time)<0.51;
+    h+=`<tr${me?' class="me"':''}><td>${i+1}</td><td>${esc(e.name)}</td><td>LV${e.lv}</td><td>${RANK_NAMES[e.rank]}</td><td>✦${e.orbs}/${e.max}</td><td>${fmtTime(e.time)}</td></tr>`;
   });
-  h+='</table>';
-  box.innerHTML=h;
+  box.innerHTML=h+'</table>';
+}
+
+/* ---------- みんなのランキング（オンライン共有・/api/ranking） ---------- */
+// GitHub Pages・ローカルfile://からでも Vercel のAPIを叩けるようにする
+const API_BASE=/\.vercel\.app$/.test(location.hostname)?'':'https://uyu-nocturne.vercel.app';
+async function apiGetRanking(){
+  try{
+    const r=await fetch(API_BASE+'/api/ranking',{cache:'no-store'});
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    return Array.isArray(j.list)?j.list:null;
+  }catch(e){return null;} // オフライン等は null → ローカル表示にフォールバック
+}
+async function apiPostScore(entry){
+  try{
+    const r=await fetch(API_BASE+'/api/ranking',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)});
+    if(!r.ok)throw 0;
+    return await r.json(); // {pos, list}
+  }catch(e){return null;}
+}
+// ローカルを即表示 → オンラインが取れたら差し替え
+async function refreshRanking(hi){
+  renderRankingBox(loadRanking(),'🏆 この端末のランキング',hi);
+  const g=await apiGetRanking();
+  if(g&&g.length)renderRankingBox(g,'🌏 みんなのランキング',hi);
 }
 const RANK_NAMES={3:'TRUE END',2:'GOOD END',1:'ANOTHER END'};
 function fmtTime(s){return `${Math.floor(s/60)}分${String(Math.floor(s%60)).padStart(2,'0')}秒`;}
@@ -1832,13 +1858,17 @@ function showEnding(){
   $('#endTitle').textContent=t;
   $('#endSub').textContent=s;
   const secs=(Date.now()-G.t0-G.pausedMs)/1000;
-  // ランキング登録（この端末内）
-  const entry={name:G.player||DEFAULT_NAME,lv:G.level,rank,orbs:G.orbs,max:G.orbMax,time:secs};
+  // ランキング登録：まず端末内に保存し、オンラインにも送信（失敗しても端末内は残る）
+  const entry={name:G.player||DEFAULT_NAME,lv:G.level,rank,orbs:G.orbs,max:G.orbMax,time:Math.round(secs*10)/10};
   const rkRes=insertRanking(loadRanking(),entry);
   saveRanking(rkRes.list);
-  G.lastRankPos=rkRes.pos; // タイトル帰還時のハイライト用
-  const posTxt=rkRes.pos?`🏆 ランキング ${rkRes.pos}位！`:'🏆 ランキング圏外……';
+  G.lastEntry=entry; // タイトル帰還時のハイライト用
+  const posTxt=rkRes.pos?`🏆 この端末で ${rkRes.pos}位！`:'🏆 この端末では圏外……';
   $('#endStats').textContent=`${entry.name} ・ 記憶のかけら ${G.orbs}/${G.orbMax} ・ きずな ${G.kizuna} ・ クリアタイム ${fmtTime(secs)}（LV${G.level}）\n${posTxt}`;
+  apiPostScore(entry).then(r=>{
+    if(!r)return; // オフライン時はなにも足さない
+    $('#endStats').textContent+=r.pos?`\n🌏 みんなのランキング ${r.pos}位！`:'\n🌏 みんなのランキングは圏外……';
+  });
   // TRUE ENDへのヒント（そっと）
   let hint='';
   if(rank<3){
@@ -1905,7 +1935,7 @@ $('#startBtn').onclick=()=>{
 $('#playerName').value=loadName();
 $('#againBtn').onclick=()=>{
   setBGM(null);renderRecords();
-  renderRanking(G.lastRankPos?G.lastRankPos-1:-1); // 直前のスコアをハイライト
+  refreshRanking(G.lastEntry); // 直前のスコアをハイライト
   show('title');
 };
 $('#muteBtn').onclick=()=>{
@@ -1915,7 +1945,7 @@ $('#muteBtn').onclick=()=>{
   $('#muteBtn').textContent=SND.mute?'✕':'♪';
 };
 renderRecords();
-renderRanking(-1);
+refreshRanking(null);
 
 /* --- テスト用エクスポート：ブラウザでは module が未定義なので実行されない（ゲーム動作に影響なし） --- */
 if(typeof module!=='undefined'&&module.exports){

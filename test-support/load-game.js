@@ -41,6 +41,7 @@ function loadGame() {
   const sandbox = {
     window: makeStub(),
     document: makeStub(),
+    location: { hostname: 'localhost' },
     requestAnimationFrame: () => 0,
     cancelAnimationFrame: () => {},
     setInterval: () => 0,

@@ -2,8 +2,11 @@
   "name": "uyu-nocturne",
   "version": "1.0.0",
   "private": true,
-  "description": "うゆの夜想曲 — 純粋ロジックのユニットテスト（ゲーム本体は index.html 単一ファイル）",
+  "description": "うゆの夜想曲 — 純粋ロジックのユニットテスト（ゲーム本体は index.html 単一ファイル）＋みんなのランキングAPI",
   "scripts": {
     "test": "node --test"
+  },
+  "dependencies": {
+    "@vercel/blob": "^1.1.1"
   }
 }

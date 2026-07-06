@@ -1,5 +1,5 @@
-# 公開するのは index.html のみ（テスト・開発用ファイルは配信しない）
+# テスト・開発用ファイルは配信しない
+# （package.json は api/ の依存インストールに必要なので除外しない）
 test/
 test-support/
-package.json
 README.md
